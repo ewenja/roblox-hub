@@ -6,12 +6,19 @@ local function getHttpRequest()
         local executor = getexecutorname():lower() -- 轉換為小寫，方便比較
         if executor == "swift" then
             return request, "Swift"
-        elseif executor == "awp.gg" then
-            return request, "AWP.GG"
+        elseif executor == "awp" then  -- AWP.GG 回傳的是 "AWP"
+            if request then
+                return request, "AWP"
+            elseif http_request then
+                return http_request, "AWP"
+            else
+                error("AWP 不支持 request 或 http_request")
+            end
         end
     end
     error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z 或 AWP.GG")
 end
+
 
 local httpRequest, injectorName = getHttpRequest()
 
