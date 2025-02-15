@@ -1,3 +1,4 @@
+print("Executor Name: ", getexecutorname())
 local function getHttpRequest()
     if syn and syn.request then
         return syn.request, "Synapse Z"
