@@ -14,10 +14,19 @@ local function getHttpRequest()
             else
                 error("AWP 不支持 request 或 http_request")
             end
+        elseif executor == "velocity" then -- 新增 Velocity 支援
+            if request then
+                return request, "Velocity"
+            elseif http_request then
+                return http_request, "Velocity"
+            else
+                error("Velocity 不支持 request 或 http_request")
+            end
         end
     end
-    error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z 或 AWP.GG")
+    error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z、AWP.GG 或 Velocity")
 end
+
 
 
 local httpRequest, injectorName = getHttpRequest()
