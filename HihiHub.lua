@@ -14,17 +14,17 @@ local function getHttpRequest()
             else
                 error("AWP 不支持 request 或 http_request")
             end
-        elseif executor:find("Sonar 0.2.0") then -- 適配 Sonar (Velocity)
+        elseif executor:find("VELOCITY 0.2.4") then -- 適配 Sonar (Velocity)
             if request then
-                return request, "Sonar 0.2.0"
+                return request, "VELOCITY 0.2.4"
             elseif http_request then
-                return http_request, "Sonar 0.2.0"
+                return http_request, "VELOCITY 0.2.4"
             else
                 error("Velocity (Sonar) 不支持 request 或 http_request")
             end
         end
     end
-    error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z、AWP.GG 或 Velocity")
+    error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z、AWP.GG 或 VELOCITY 0.2.4")
 end
 
 local httpRequest, injectorName = getHttpRequest()
