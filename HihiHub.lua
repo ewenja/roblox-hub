@@ -24,7 +24,7 @@ local function getHttpRequest()
             end
         end
     end
-    error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z、AWP.GG 或 VELOCITY 0.2.4")
+    error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z、AWP.GG 或 Velocity 0.2.4")
 end
 
 local httpRequest, injectorName = getHttpRequest()
