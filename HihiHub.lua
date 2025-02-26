@@ -27,17 +27,17 @@ local function getHttpRequest()
     error("未檢測到支持的 HTTP 請求函數，請使用 Swift、Synapse Z、AWP、Velocity、Fluxus 或 Electron")
 end
 
--- 獲取 HTTP 請求函數
 local httpRequest, injectorName = getHttpRequest()
 
--- 發送請求到伺服器
 local success, scriptResponse = pcall(function()
     return httpRequest({
         Url = "https://haihai.hihihub.workers.dev/",
         Method = "GET",
         Headers = {
             ["User-Agent"] = injectorName,
-            ["X-Auth-Token"] = "EWE"
+            ["X-Auth-Token"] = "EWE",
+            ["Referer"] = "https://example.com", -- 防止被防火牆攔截
+            ["Origin"] = "https://example.com"
         }
     })
 end)
