@@ -14,11 +14,11 @@ local function getHttpRequest()
             else
                 error("AWP 不支持 request 或 http_request")
             end
-        elseif executor:find("VELOCITY 0.2.4") then -- 適配 Sonar (Velocity)
+        elseif executor:find("Velocity 0.2.4") then -- 適配 Sonar (Velocity)
             if request then
-                return request, "VELOCITY 0.2.4"
+                return request, "Velocity 0.2.4"
             elseif http_request then
-                return http_request, "VELOCITY 0.2.4"
+                return http_request, "Velocity 0.2.4"
             else
                 error("Velocity (Sonar) 不支持 request 或 http_request")
             end
