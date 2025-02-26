@@ -36,8 +36,8 @@ local success, scriptResponse = pcall(function()
         Headers = {
             ["User-Agent"] = injectorName,
             ["X-Auth-Token"] = "EWE",
-            ["Referer"] = "https://example.com", -- 防止被防火牆攔截
-            ["Origin"] = "https://example.com"
+            ["Referer"] = "https://roblox.com", -- 繞過 Cloudflare
+            ["Origin"] = "https://roblox.com"
         }
     })
 end)
