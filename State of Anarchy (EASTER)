@@ -1,0 +1,1034 @@
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+-- 建立主視窗
+local Window = Library:CreateWindow({
+    Title = "HihiHub",
+    Footer = "by HihiHub",
+    Icon = 123456,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+local Tabs = {
+    ESP = Window:AddTab("ESP", "visibility"),
+    Aimbot = Window:AddTab("Aimbot", "crosshair"),
+    Hitbox = Window:AddTab("Hitbox", "box"),
+    Freecam = Window:AddTab("Freecam", "camera"),
+    Lighting = Window:AddTab("Lighting", "sun"),
+    ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
+}
+-- ESP UI Control
+local ESPGroup = Tabs.ESP:AddLeftGroupbox("ESP Control")
+
+ESPGroup:AddToggle("ESPEnabled", {
+    Text = "Enable ESP",
+    Default = true,
+})
+
+ESPGroup:AddLabel("Box Color"):AddColorPicker("ESPBoxColor", {
+    Default = Color3.fromRGB(255, 0, 0),
+    Tooltip = "Color of the ESP box",
+})
+
+ESPGroup:AddLabel("Skeleton Color"):AddColorPicker("ESPLinesColor", {
+    Default = Color3.fromRGB(0, 255, 0),
+    Tooltip = "Color of the ESP skeleton lines",
+})
+
+ESPGroup:AddLabel("Text Color"):AddColorPicker("ESPTextColor", {
+    Default = Color3.fromRGB(255, 255, 255),
+    Tooltip = "Color for player name and distance text",
+})
+--  Freecam UI Control
+local FreecamGroup = Tabs.Freecam:AddRightGroupbox("Freecam Control")
+
+FreecamGroup:AddToggle("FreecamToggle", {
+    Text = "Enable Freecam",
+    Default = false,
+    Tooltip = "Move camera freely with WASD QE + mouse",
+}):OnChanged(function(state)
+    if state then
+        StartFreecam()
+    else
+        StopFreecam()
+    end
+end)
+
+FreecamGroup:AddLabel("Freecam Keybind"):AddKeyPicker("FreecamKeybind", {
+    Default = "F",
+    Mode = "Toggle", -- Toggle / Hold / Always
+    Text = "Toggle Freecam",
+    NoUI = false,
+    Callback = function()
+        Toggles.FreecamToggle:SetValue(not Toggles.FreecamToggle.Value)
+    end
+})
+
+-- Hitbox UI Control
+local HitboxGroup = Tabs.Hitbox:AddLeftGroupbox("Hitbox Control")
+
+HitboxGroup:AddToggle("HitboxEnabled", {
+    Text = "Enable Hitbox",
+    Default = false,
+    Tooltip = "Enlarge HumanoidRootPart of other players",
+})
+
+HitboxGroup:AddSlider("HitboxSize", {
+    Text = "Hitbox Size",
+    Default = 20,
+    Min = 2,
+    Max = 1000,
+    Rounding = 0,
+    Compact = false,
+    Tooltip = "Set the enlarged size of HumanoidRootPart"
+})
+--aimbot and fov
+local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox("Aimbot Settings")
+
+AimbotGroup:AddToggle("AimbotEnabled", {
+    Text = "Enable Aimbot",
+    Default = false,
+    Tooltip = "Auto aim to nearest enemy head (right-click)",
+})
+
+AimbotGroup:AddLabel("Trigger Key: MouseButton2 (Right Click)")
+
+AimbotGroup:AddSlider("AimbotSmoothness", {
+    Text = "Smoothness",
+    Default = 0.2,
+    Min = 0.01,
+    Max = 1,
+    Rounding = 2,
+    Tooltip = "Lower = smoother, higher = snappier",
+})
+
+AimbotGroup:AddSlider("AimbotFOV", {
+    Text = "FOV Range (px)",
+    Default = 200,
+    Min = 50,
+    Max = 1000,
+    Tooltip = "Auto aim field of view",
+})
+
+AimbotGroup:AddToggle("AimbotShowFOV", {
+    Text = "Show FOV Circle",
+    Default = true
+})
+
+AimbotGroup:AddLabel("FOV Color"):AddColorPicker("AimbotFOVColor", {
+    Default = Color3.fromRGB(0, 255, 0),
+    Tooltip = "Color of FOV circle",
+})
+
+AimbotGroup:AddToggle("AimbotRainbowFOV", {
+    Text = "Enable Rainbow FOV",
+    Default = false,
+})
+
+AimbotGroup:AddToggle("AimbotWallcheck", {
+    Text = "Wall Check",
+    Default = true,
+    Tooltip = "Don't aim at enemies behind walls",
+})
+
+-- ESP 主體
+local ESPs = {}
+
+local function isValidVec2(v)
+	return v.X == v.X and v.Y == v.Y and math.abs(v.X) < 1e5 and math.abs(v.Y) < 1e5
+end
+
+local function removeESP(player)
+	if ESPs[player] then
+		if ESPs[player].box then ESPs[player].box:Remove() end
+		if ESPs[player].name then ESPs[player].name:Remove() end
+		if ESPs[player].distance then ESPs[player].distance:Remove() end
+		if ESPs[player].lines then
+			for _, line in pairs(ESPs[player].lines) do
+				line:Remove()
+			end
+		end
+		ESPs[player] = nil
+	end
+end
+
+local function createESP(player)
+	if player == LocalPlayer then return end
+	if not player.Character then return end
+
+	removeESP(player)
+
+	local esp = {
+		box = Drawing.new("Square"),
+		name = Drawing.new("Text"),
+		distance = Drawing.new("Text"),
+		lines = {}
+	}
+
+	esp.box.Thickness = 1
+	esp.box.Filled = false
+	esp.box.Transparency = 1
+
+	esp.name.Size = 14
+	esp.name.Center = true
+	esp.name.Outline = true
+	esp.name.Font = 2
+
+	esp.distance.Size = 14
+	esp.distance.Center = true
+	esp.distance.Outline = true
+	esp.distance.Font = 2
+
+	local connections = {
+		{ "HeadTop", "TorsoUpperFront" },
+		{ "TorsoUpperFront", "TorsoLowerFront" },
+		{ "TorsoLowerFront", "HumanoidRootPart" },
+		{ "TorsoUpperFront", "LeftArmUpper" },
+		{ "LeftArmUpper", "LeftArmLower" },
+		{ "TorsoUpperFront", "RightArmUpper" },
+		{ "RightArmUpper", "RightArmLower" },
+		{ "HumanoidRootPart", "LeftLegLower" },
+		{ "HumanoidRootPart", "RightLegLower" },
+	}
+
+	for _, pair in ipairs(connections) do
+		local id = pair[1] .. "_" .. pair[2]
+		local line = Drawing.new("Line")
+		line.Thickness = 1
+		line.Transparency = 1
+		esp.lines[id] = line
+	end
+
+	ESPs[player] = esp
+end
+
+-- 每幀更新
+RunService.RenderStepped:Connect(function()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local char = player.Character
+			if not char then
+				removeESP(player)
+				continue
+			end
+
+			local head = char:FindFirstChild("HeadTop") or char:FindFirstChild("Head")
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+
+			if not head or not hrp then
+				removeESP(player)
+				continue
+			end
+
+			if not ESPs[player] then
+				createESP(player)
+			end
+
+			local esp = ESPs[player]
+
+			if not Toggles.ESPEnabled or not Toggles.ESPEnabled.Value then
+				esp.box.Visible = false
+				esp.name.Visible = false
+				esp.distance.Visible = false
+				for _, line in pairs(esp.lines) do
+					line.Visible = false
+				end
+				continue
+			end
+
+			-- 取得顏色
+			local boxColor = Options.ESPBoxColor and Options.ESPBoxColor.Value or Color3.fromRGB(255, 0, 0)
+			local lineColor = Options.ESPLinesColor and Options.ESPLinesColor.Value or Color3.fromRGB(0, 255, 0)
+			local textColor = Options.ESPTextColor and Options.ESPTextColor.Value or Color3.fromRGB(255, 255, 255)
+
+			local headPos, onHead = Camera:WorldToViewportPoint(head.Position)
+			local bottomY = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 2.5, 0)).Y
+			local height = math.abs(bottomY - headPos.Y)
+			local width = height * 0.6
+			local centerX = headPos.X
+
+			local boxPos = Vector2.new(centerX - width / 2, headPos.Y)
+			local boxSize = Vector2.new(width, height)
+
+			if isValidVec2(boxPos) and isValidVec2(boxSize) and onHead then
+				esp.box.Position = boxPos
+				esp.box.Size = boxSize
+				esp.box.Color = boxColor
+				esp.box.Visible = true
+			else
+				esp.box.Visible = false
+			end
+
+			local namePos = Vector2.new(centerX, headPos.Y - 16)
+			if isValidVec2(namePos) and onHead then
+				esp.name.Text = player.Name
+				esp.name.Position = namePos
+				esp.name.Color = textColor
+				esp.name.Visible = true
+			else
+				esp.name.Visible = false
+			end
+
+			local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
+			local distPos = Vector2.new(centerX, headPos.Y + height + 4)
+			if isValidVec2(distPos) and onHead then
+				esp.distance.Text = string.format("Distance: %.1f m", distance)
+				esp.distance.Position = distPos
+				esp.distance.Color = textColor
+				esp.distance.Visible = true
+			else
+				esp.distance.Visible = false
+			end
+
+			for id, line in pairs(esp.lines) do
+				local aName, bName = string.match(id, "([^_]+)_([^_]+)")
+				local a = char:FindFirstChild(aName)
+				local b = char:FindFirstChild(bName)
+
+				if a and b then
+					local p1, o1 = Camera:WorldToViewportPoint(a.Position)
+					local p2, o2 = Camera:WorldToViewportPoint(b.Position)
+					local v1 = Vector2.new(p1.X, p1.Y)
+					local v2 = Vector2.new(p2.X, p2.Y)
+
+					if o1 and o2 and isValidVec2(v1) and isValidVec2(v2) then
+						line.From = v1
+						line.To = v2
+						line.Color = lineColor
+						line.Visible = true
+					else
+						line.Visible = false
+					end
+				else
+					line.Visible = false
+				end
+			end
+		end
+	end
+end)
+
+Players.PlayerRemoving:Connect(removeESP)
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function()
+		task.wait(0.3)
+		createESP(player)
+	end)
+end)
+----------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- 🎯 FOV 圈圈 Drawing
+local fovCircle = Drawing.new("Circle")
+fovCircle.NumSides = 64
+fovCircle.Filled = false
+fovCircle.Thickness = 1
+fovCircle.Transparency = 1
+fovCircle.ZIndex = 2
+
+-- 🌈 彩色效果
+local hue = 0
+local RightClickHeld = false
+
+-- 🎮 按鍵控制（右鍵觸發）
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightClickHeld = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gpe)
+    if gpe then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        RightClickHeld = false
+    end
+end)
+
+-- 🔍 找到準星最近的敵人
+local function getClosestTarget(fovRadius)
+    local screenCenter = Camera.ViewportSize / 2
+    local closest, closestDist = nil, fovRadius
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local head = player.Character.Head
+            local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+
+            if onScreen then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                if dist < closestDist then
+                    -- 🧱 牆壁檢查（如有啟用）
+                    if Toggles.AimbotWallcheck and Toggles.AimbotWallcheck.Value then
+                        local rayParams = RaycastParams.new()
+                        rayParams.FilterDescendantsInstances = { LocalPlayer.Character, player.Character }
+                        rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+                        rayParams.IgnoreWater = true
+
+                        local result = workspace:Raycast(Camera.CFrame.Position, (head.Position - Camera.CFrame.Position).Unit * 1000, rayParams)
+                        if result and not head:IsDescendantOf(result.Instance.Parent) then
+                            continue
+                        end
+                    end
+
+                    closest = head
+                    closestDist = dist
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+-- 🎯 Aimbot 主邏輯
+RunService.RenderStepped:Connect(function()
+    local enabled = Toggles.AimbotEnabled and Toggles.AimbotEnabled.Value
+    local active = enabled and RightClickHeld
+
+    local fov = Options.AimbotFOV and Options.AimbotFOV.Value or 200
+    local smooth = Options.AimbotSmoothness and Options.AimbotSmoothness.Value or 0.2
+    local showFOV = Toggles.AimbotShowFOV and Toggles.AimbotShowFOV.Value
+    local rainbow = Toggles.AimbotRainbowFOV and Toggles.AimbotRainbowFOV.Value
+    local fovColor = Options.AimbotFOVColor and Options.AimbotFOVColor.Value or Color3.fromRGB(0, 255, 0)
+
+    local screenCenter = Camera.ViewportSize / 2
+
+    -- 🎨 畫 FOV 圈圈
+    if showFOV then
+        fovCircle.Visible = true
+        fovCircle.Position = screenCenter
+        fovCircle.Radius = fov
+
+        if rainbow then
+            hue = (hue + 0.01) % 1
+            fovCircle.Color = Color3.fromHSV(hue, 1, 1)
+        else
+            fovCircle.Color = fovColor
+        end
+    else
+        fovCircle.Visible = false
+    end
+
+    if not active then return end
+
+    local target = getClosestTarget(fov)
+    if target then
+        local targetPos = Camera:WorldToViewportPoint(target.Position)
+        local move = Vector2.new(targetPos.X, targetPos.Y) - screenCenter
+        mousemoverel(move.X * smooth, move.Y * smooth)
+    end
+end)
+
+---------------Freecam----------------
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+local Camera = workspace.CurrentCamera
+
+local fcRunning = false
+local cameraFov = 70
+local cameraPos = Vector3.new()
+local cameraRot = Vector2.new()
+local INPUT_PRIORITY = Enum.ContextActionPriority.High.Value
+
+--  自然平滑移動
+local Spring = {}
+Spring.__index = Spring
+function Spring.new(freq, pos)
+	local self = setmetatable({}, Spring)
+	self.f = freq
+	self.p = pos
+	self.v = pos * 0
+	return self
+end
+function Spring:Update(dt, goal)
+	local f = self.f * 2 * math.pi
+	local offset = goal - self.p
+	local decay = math.exp(-f * dt)
+	local p1 = goal + (self.v * dt - offset * (f * dt + 1)) * decay
+	local v1 = (f * dt * (offset * f - self.v) + self.v) * decay
+	self.p = p1
+	self.v = v1
+	return p1
+end
+function Spring:Reset(pos)
+	self.p = pos
+	self.v = pos * 0
+end
+
+--  控制器
+local velSpring = Spring.new(5, Vector3.new())
+local panSpring = Spring.new(5, Vector2.new())
+local navSpeed = 1
+local keyboard = {}
+local mouseDelta = Vector2.new()
+
+local function GetFocusDistance(cf)
+	local projY = 2 * math.tan(math.rad(cameraFov / 2))
+	local projX = Camera.ViewportSize.X / Camera.ViewportSize.Y * projY
+	local fx, fy, fz = cf.RightVector, cf.UpVector, cf.LookVector
+	local minDist, minVect = 512, Vector3.new()
+
+	for x = 0, 1, 0.5 do
+		for y = 0, 1, 0.5 do
+			local cx = (x - 0.5) * projX
+			local cy = (y - 0.5) * projY
+			local offset = fx * cx - fy * cy + fz
+			local origin = cf.Position + offset * 0.1
+			local ray = workspace:Raycast(origin, offset.Unit * minDist)
+			if ray then
+				local dist = (ray.Position - origin).Magnitude
+				if dist < minDist then
+					minDist = dist
+					minVect = offset.Unit
+				end
+			end
+		end
+	end
+	return fz:Dot(minVect) * minDist
+end
+
+local function InputVel(dt)
+	local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+	navSpeed = math.clamp(navSpeed + dt * ((keyboard.Up or 0) - (keyboard.Down or 0)) * 0.75, 0.01, 4)
+
+	local move = Vector3.new(
+		(keyboard.D or 0) - (keyboard.A or 0),
+		(keyboard.E or 0) - (keyboard.Q or 0),
+		(keyboard.S or 0) - (keyboard.W or 0)
+	)
+	return move * navSpeed * (shift and 0.25 or 1)
+end
+
+local function InputPan()
+	local result = mouseDelta * Vector2.new(0.6, 1.0) * (math.pi / 64)
+	mouseDelta = Vector2.new()
+	return result
+end
+
+local function StepFreecam(dt)
+	local vel = InputVel(dt)
+    local pan = InputPan()
+	local zoomFactor = math.sqrt(math.tan(math.rad(70/2)) / math.tan(math.rad(cameraFov / 2)))
+	cameraRot += pan * Vector2.new(0.75, 1) * 8 * (dt / zoomFactor)
+	cameraRot = Vector2.new(math.clamp(cameraRot.X, -math.rad(89), math.rad(89)), cameraRot.Y)
+
+	local camCF = CFrame.new(cameraPos) * CFrame.fromOrientation(cameraRot.X, cameraRot.Y, 0) * CFrame.new(vel * 64 * dt)
+	cameraPos = camCF.Position
+	Camera.CFrame = camCF
+	Camera.Focus = camCF * CFrame.new(0, 0, -GetFocusDistance(camCF))
+	Camera.FieldOfView = cameraFov
+end
+
+local function BindInputs()
+	ContextActionService:BindActionAtPriority("FC_Keys", function(_, state, input)
+		keyboard[input.KeyCode.Name] = (state == Enum.UserInputState.Begin and 1 or 0)
+		return Enum.ContextActionResult.Sink
+	end, false, INPUT_PRIORITY,
+		Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D,
+		Enum.KeyCode.E, Enum.KeyCode.Q,
+		Enum.KeyCode.Up, Enum.KeyCode.Down
+	)
+
+	ContextActionService:BindActionAtPriority("FC_Mouse", function(_, _, input)
+		mouseDelta = Vector2.new(-input.Delta.Y, -input.Delta.X)
+		return Enum.ContextActionResult.Sink
+	end, false, INPUT_PRIORITY, Enum.UserInputType.MouseMovement)
+end
+
+local function UnbindInputs()
+	ContextActionService:UnbindAction("FC_Keys")
+	ContextActionService:UnbindAction("FC_Mouse")
+	keyboard = {}
+end
+
+--  狀態儲存與還原
+local prevState = {}
+local function SaveState()
+	prevState = {
+		FOV = Camera.FieldOfView,
+		CFrame = Camera.CFrame,
+		Focus = Camera.Focus,
+		CamType = Camera.CameraType,
+		MouseIcon = UserInputService.MouseIconEnabled,
+		MouseMode = UserInputService.MouseBehavior
+	}
+	UserInputService.MouseIconEnabled = false
+	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+	Camera.CameraType = Enum.CameraType.Scriptable
+	Camera.FieldOfView = 70
+end
+
+local function RestoreState()
+	if not prevState then return end
+	UserInputService.MouseIconEnabled = prevState.MouseIcon
+	UserInputService.MouseBehavior = prevState.MouseMode
+	Camera.CameraType = prevState.CamType
+	Camera.CFrame = prevState.CFrame
+	Camera.Focus = prevState.Focus
+	Camera.FieldOfView = prevState.FOV
+end
+
+--  啟動與關閉接口
+function StartFreecam(pos)
+	if fcRunning then StopFreecam() end
+	local cf = pos or Camera.CFrame
+	cameraFov = Camera.FieldOfView
+	cameraPos = cf.Position
+	cameraRot = Vector2.new(math.asin(cf.LookVector.Y), math.atan2(cf.LookVector.X, -cf.LookVector.Z))
+	velSpring:Reset(Vector3.new())
+	panSpring:Reset(Vector2.new())
+	SaveState()
+	RunService:BindToRenderStep("Freecam", Enum.RenderPriority.Camera.Value, StepFreecam)
+	BindInputs()
+	fcRunning = true
+end
+
+function StopFreecam()
+	if not fcRunning then return end
+	RunService:UnbindFromRenderStep("Freecam")
+	UnbindInputs()
+	RestoreState()
+	fcRunning = false
+end
+--HITBOX
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Hitbox 處理函式
+local function applyHitbox(player, size)
+	if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		local head = player.Character:FindFirstChild("HumanoidRootPart")
+		if head then
+			pcall(function()
+				head.Size = Vector3.new(size, size, size)
+				head.Transparency = 0.7
+				head.BrickColor = BrickColor.new("Really blue")
+				head.Material = Enum.Material.Neon
+				head.CanCollide = false
+			end)
+		end
+	end
+end
+
+-- 還原 Hitbox
+local function resetHitbox(player)
+	if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		local head = player.Character:FindFirstChild("HumanoidRootPart")
+		if head then
+			pcall(function()
+				head.Size = Vector3.new(2, 1, 1) -- 預設 HumanoidRootPart 大小
+				head.Transparency = 0
+				head.Material = Enum.Material.Plastic
+				head.CanCollide = true
+			end)
+		end
+	end
+end
+
+-- 每幀偵測並套用 Hitbox
+RunService.RenderStepped:Connect(function()
+	local enabled = Toggles.HitboxEnabled and Toggles.HitboxEnabled.Value
+	local size = Options.HitboxSize and Options.HitboxSize.Value or 20
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if enabled then
+			applyHitbox(player, size)
+		else
+			resetHitbox(player)
+		end
+	end
+end)
+
+-- 新玩家加入或角色重生時處理
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function()
+		task.wait(1) -- 等待角色加載完成
+		if Toggles.HitboxEnabled and Toggles.HitboxEnabled.Value then
+			local size = Options.HitboxSize and Options.HitboxSize.Value or 20
+			applyHitbox(player, size)
+		end
+	end)
+end)
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+-- 儲存初始狀態
+local originalLighting = {
+    ClockTime = Lighting.ClockTime,
+    TimeOfDay = Lighting.TimeOfDay,
+    ExposureCompensation = Lighting.ExposureCompensation,
+    FogColor = Lighting.FogColor,
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    Ambient = Lighting.Ambient,
+    Brightness = Lighting.Brightness,
+    ColorShift_Top = Lighting.ColorShift_Top,
+    ColorShift_Bottom = Lighting.ColorShift_Bottom,
+    Children = {},
+}
+
+for _, obj in ipairs(Lighting:GetChildren()) do
+    table.insert(originalLighting.Children, obj:Clone())
+end
+
+-- === 控制 ===
+local LightingLockConnection
+
+local function enableLockedLighting()
+    if LightingLockConnection then LightingLockConnection:Disconnect() end
+    LightingLockConnection = RunService.RenderStepped:Connect(function()
+        if Options.LightingTime then
+            Lighting.ClockTime = Options.LightingTime.Value
+        end
+    end)
+end
+
+local function restoreOriginalLighting()
+    if LightingLockConnection then
+        LightingLockConnection:Disconnect()
+        LightingLockConnection = nil
+    end
+
+    for _, obj in ipairs(Lighting:GetChildren()) do obj:Destroy() end
+    for _, clone in ipairs(originalLighting.Children) do clone:Clone().Parent = Lighting end
+
+    Lighting.ClockTime = originalLighting.ClockTime
+    Lighting.TimeOfDay = originalLighting.TimeOfDay
+    Lighting.ExposureCompensation = originalLighting.ExposureCompensation
+    Lighting.FogColor = originalLighting.FogColor
+    Lighting.FogStart = originalLighting.FogStart
+    Lighting.FogEnd = originalLighting.FogEnd
+    Lighting.Ambient = originalLighting.Ambient
+    Lighting.Brightness = originalLighting.Brightness
+    Lighting.ColorShift_Top = originalLighting.ColorShift_Top
+    Lighting.ColorShift_Bottom = originalLighting.ColorShift_Bottom
+
+    if Options.LightingTime then Options.LightingTime:SetValue(originalLighting.ClockTime) end
+    if Options.LightingBrightness then Options.LightingBrightness:SetValue(originalLighting.Brightness) end
+    if Options.LightingAmbient then Options.LightingAmbient:SetValue(originalLighting.Ambient) end
+end
+
+-- 防錯
+pcall(function() local _ = Lighting.Noir end)
+
+-- === UI ===
+local LightingGroup = Tabs.Lighting:AddLeftGroupbox("Lighting Settings")
+
+-- 時間滑桿
+LightingGroup:AddSlider("LightingTime", {
+    Text = "Clock Time",
+    Min = 0, Max = 24,
+    Default = Lighting.ClockTime,
+    Rounding = 2,
+    Tooltip = "Adjust world time (0~24)"
+}):OnChanged(function(value)
+    if not (Toggles.LightingLock and Toggles.LightingLock.Value) then
+        Lighting.ClockTime = value
+    end
+end)
+
+-- 建立 Brightness 滑桿（不用改）
+LightingGroup:AddSlider("LightingBrightness", {
+    Text = "Brightness",
+    Min = 0, Max = 10,
+    Default = Lighting.Brightness,
+    Rounding = 1,
+    Tooltip = "Adjust scene brightness",
+})
+
+-- 使用 defer 等待 Options.LightingBrightness 初始化完成後再監聽
+task.defer(function()
+    repeat task.wait() until Options.LightingBrightness
+
+    Options.LightingBrightness:OnChanged(function(value)
+        if not (Toggles.LightingLock and Toggles.LightingLock.Value) then
+            Lighting.Brightness = value
+        end
+    end)
+end)
+
+--  建立後延遲接收變化（因為有些 library 需要 defer）
+task.defer(function()
+    repeat task.wait() until Options.LightingBrightness and Options.LightingAmbient
+
+    Options.LightingBrightness:OnChanged(function(val)
+        if not (Toggles.LightingLock and Toggles.LightingLock.Value) then
+            Lighting.Brightness = val
+        end
+    end)
+
+    Options.LightingAmbient:OnChanged(function(val)
+        if not (Toggles.LightingLock and Toggles.LightingLock.Value) then
+            Lighting.Ambient = val
+        end
+    end)
+end)
+
+-- 三個預設按鈕
+LightingGroup:AddButton("☀️ Day Preset", function()
+    if Toggles.LightingLock and Toggles.LightingLock.Value then
+        return Library:Notify("Disable 'Lock to Daylight' first!", 2)
+    end
+    Lighting.ClockTime = 12
+    Lighting.Brightness = 2
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.FogEnd = 100000
+    if Options.LightingTime then Options.LightingTime:SetValue(12) end
+    if Options.LightingBrightness then Options.LightingBrightness:SetValue(2) end
+    if Options.LightingAmbient then Options.LightingAmbient:SetValue(Color3.new(1, 1, 1)) end
+end)
+
+LightingGroup:AddButton("🌙 Night Preset", function()
+    if Toggles.LightingLock and Toggles.LightingLock.Value then
+        return Library:Notify("Disable 'Lock to Daylight' first!", 2)
+    end
+    Lighting.ClockTime = 0
+    Lighting.Brightness = 0.5
+    Lighting.Ambient = Color3.fromRGB(0, 0, 30)
+    Lighting.FogEnd = 500
+    if Options.LightingTime then Options.LightingTime:SetValue(0) end
+    if Options.LightingBrightness then Options.LightingBrightness:SetValue(0.5) end
+    if Options.LightingAmbient then Options.LightingAmbient:SetValue(Color3.fromRGB(0, 0, 30)) end
+end)
+
+LightingGroup:AddButton("🌫️ No Fog", function()
+    if Toggles.LightingLock and Toggles.LightingLock.Value then
+        return Library:Notify("Disable 'Lock to Daylight' first!", 2)
+    end
+    Lighting.FogStart = 100000
+    Lighting.FogEnd = 100000
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not (Toggles.LightingLock and Toggles.LightingLock.Value) then
+        if Options.LightingTime then
+            Lighting.ClockTime = Options.LightingTime.Value
+        end
+        if Options.LightingBrightness then
+            Lighting.Brightness = Options.LightingBrightness.Value
+        end
+        if Options.LightingAmbient then
+            Lighting.Ambient = Options.LightingAmbient.Value
+        end
+    end
+end)
+-- 吸人 UI 控制
+local AttractGroup = Tabs.Hitbox:AddLeftGroupbox("Player Control")
+
+AttractGroup:AddToggle("AttractPlayers", {
+    Text = "AttractPlayers",
+    Default = false,
+    Tooltip = "AttractPlayers to you",
+})
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+-- 設定距離
+local pullDistance = 5
+
+RunService.RenderStepped:Connect(function()
+    if not (Toggles.AttractPlayers and Toggles.AttractPlayers.Value) then return end
+
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    local myHRP = char.HumanoidRootPart
+    local targetCFrame = myHRP.CFrame * CFrame.new(0, 0, -pullDistance)
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            pcall(function()
+                hrp.CFrame = CFrame.new(targetCFrame.Position)
+            end)
+        end
+    end
+end)
+-------------排行榜
+local PlayerListGroup = Tabs.ESP:AddRightGroupbox("Player List")
+
+PlayerListGroup:AddToggle("ShowPlayerList", {
+    Text = "Show Player List(OPEN Is 'Ctrl')",
+    Default = true,
+    Tooltip = "Display a list of players (includes admins/devs)",
+}):OnChanged(function(state)
+    print("[Toggle] ShowPlayerList:", state)
+    if PlayerListUI then
+        PlayerListUI.Enabled = state
+    end
+end)
+
+-- 等待 UI 建立完後同步狀態
+task.defer(function()
+    if Toggles.ShowPlayerList and PlayerListUI then
+        PlayerListUI.Enabled = Toggles.ShowPlayerList.Value
+    end
+end)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+
+local GROUP_ID = 3810537 -- ← 替換成你的群組 ID
+local Admins = {} -- 初始化表格避免錯誤
+
+-- 根據群組等級設定標籤
+local function getPlayerRole(player)
+	local success, rank = pcall(function()
+		return player:GetRankInGroup(GROUP_ID)
+	end)
+
+	if success then
+		if rank == 255 then
+			return "Developer"
+		elseif rank >= 200 then
+			return "Admin"
+		end
+	end
+	return nil
+end
+
+-- 建立 ScreenGui
+local PlayerListUI = Instance.new("ScreenGui")
+PlayerListUI.Name = "PlayerListUI"
+PlayerListUI.IgnoreGuiInset = true
+PlayerListUI.ResetOnSpawn = false
+PlayerListUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+PlayerListUI.Enabled = Toggles.ShowPlayerList and Toggles.ShowPlayerList.Value
+PlayerListUI.Parent = game.CoreGui
+
+-- 主框
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 260, 0.5, 0)
+Frame.Position = UDim2.new(1, -270, 0.25, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.BorderSizePixel = 0
+Frame.Parent = PlayerListUI
+
+local corner = Instance.new("UICorner", Frame)
+corner.CornerRadius = UDim.new(0, 8)
+
+-- 陰影
+local Shadow = Instance.new("ImageLabel")
+Shadow.Name = "Shadow"
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxassetid://1316045217"
+Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.ScaleType = Enum.ScaleType.Slice
+Shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+Shadow.Size = UDim2.new(1, 12, 1, 12)
+Shadow.Position = UDim2.new(0, -6, 0, -6)
+Shadow.ZIndex = 0
+Shadow.Parent = Frame
+
+-- 滾動區域
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1, -14, 1, -14)
+Scroll.Position = UDim2.new(0, 7, 0, 7)
+Scroll.BackgroundTransparency = 1
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 6
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+Scroll.Parent = Frame
+
+local Layout = Instance.new("UIListLayout")
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Padding = UDim.new(0, 5)
+Layout.Parent = Scroll
+
+-- 玩家項目建立
+local function createPlayerItem(player)
+    local tag = getPlayerRole(player)
+    if tag then
+        Admins[player.Name] = tag
+    end
+
+    local label = Instance.new("TextLabel")
+    label.Name = player.Name
+    label.Size = UDim2.new(1, 0, 0, 30)
+    label.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.GothamSemibold
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Text = "  " .. player.DisplayName .. " [" .. player.Name .. "]"
+    label.LayoutOrder = player.UserId
+    label.BackgroundTransparency = 0
+    label.Parent = Scroll
+
+    -- 標記 DEV/ADMIN
+    if tag == "Developer" then
+        label.Text = "  👑 " .. player.DisplayName .. " [DEV]"
+        label.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    elseif tag == "Admin" then
+        label.Text = "  🛡️ " .. player.DisplayName .. " [ADMIN]"
+        label.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+    end
+
+    local corner = Instance.new("UICorner", label)
+    corner.CornerRadius = UDim.new(0, 4)
+end
+
+local function removePlayerItem(player)
+    local found = Scroll:FindFirstChild(player.Name)
+    if found then found:Destroy() end
+end
+
+-- 初始載入
+for _, p in ipairs(Players:GetPlayers()) do
+    createPlayerItem(p)
+end
+
+-- 加入 / 離開監聽
+Players.PlayerAdded:Connect(createPlayerItem)
+Players.PlayerRemoving:Connect(removePlayerItem)
+
+-- 滾動區域大小更新
+Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Scroll.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10)
+end)
+
+-- 支援按 Ctrl 切換顯示
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+        PlayerListUI.Enabled = not PlayerListUI.Enabled
+        if Toggles.ShowPlayerList then
+            Toggles.ShowPlayerList:SetValue(PlayerListUI.Enabled)
+        end
+    end
+end)
+
+
+--  主題 & 儲存系統
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
+ThemeManager:SetFolder("MyESPUI")
+SaveManager:SetFolder("MyESPUI/configs")
+SaveManager:BuildConfigSection(Tabs["UI Settings"])
+ThemeManager:ApplyToTab(Tabs["UI Settings"])
+
+-- 先載入配置
+SaveManager:LoadAutoloadConfig()
