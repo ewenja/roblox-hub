@@ -12,7 +12,7 @@ function SafeUILib:CreateWindow(opts)
     local windowSize = opts.Size or UDim2.new(0, 300, 0, 200)
     local backgroundColor = opts.BackgroundColor or Color3.fromRGB(30,30,30)
 
-    -- 🧼 安全隱匿 GUI
+    --  安全隱匿 GUI
     local gui = Instance.new("ScreenGui")
     gui.ResetOnSpawn = false
     gui.Name = windowName
@@ -22,7 +22,7 @@ function SafeUILib:CreateWindow(opts)
         gui.Parent = game:GetService("CoreGui")
     end
 
-    -- 🎨 主框架
+    --  主框架
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainUI_" .. tostring(math.random(100000,999999))
     mainFrame.Size = windowSize
@@ -36,7 +36,7 @@ function SafeUILib:CreateWindow(opts)
     local corner = Instance.new("UICorner", mainFrame)
     corner.CornerRadius = UDim.new(0, 6)
 
-    -- ☁️ 拖曳功能
+    -- ☁ 拖曳功能
     local dragging, dragInput, dragStart, startPos
 
     mainFrame.InputBegan:Connect(function(input)
@@ -59,7 +59,7 @@ function SafeUILib:CreateWindow(opts)
         end
     end)
 
-    -- 🔁 顯示切換快捷鍵
+    --  顯示切換快捷鍵
     local open = false
     UIS.InputBegan:Connect(function(input, gpe)
         if not gpe and table.find(toggleKeys, input.KeyCode) then
