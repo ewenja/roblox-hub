@@ -1,47 +1,69 @@
+---
+
 ### 🛡️ HihiHub UI Library
 
-一個專為 Roblox 腳本安全設計的輕量級 UI Library 
-具備防偵測邏輯與混淆處理，支援常見的 UI 控件與快捷鍵開關
+A lightweight and **anti-detection friendly** UI library for Roblox scripts.  
+It supports customizable controls, randomized element names, toggle hotkeys, and more — all in a single standalone file.
 
 ---
 
-#### ✅ 特色功能：
+#### ✅ Features:
 
-- 自訂按鈕 `AddButton`
-- 開關切換 `AddToggle`
-- 滑桿選擇 `AddSlider`
-- 熱鍵綁定 `AddKeybind`
-- 快捷鍵切換 UI 顯示（預設：右 Ctrl / Insert）
-- 支援 UI 拖曳移動
-- 圓角樣式、動畫過渡
-- 元素名稱自動混淆（降低被檢測機率）
-- 單一檔案、無外部依賴、可即貼即用
+- Custom button creation: `AddButton`
+- Toggle switch UI: `AddToggle`
+- Sliders with value range: `AddSlider`
+- Keybinding support: `AddKeybind`
+- Built-in UI toggle (default: RightCtrl / Insert)
+- Draggable UI window
+- Rounded corners and smooth transitions
+- Randomized element names (for extra obfuscation)
+- Zero external dependencies — plug and play!
 
 ---
 
-#### 🧪 範例使用：
+#### 🧪 Example Usage:
 
 ```lua
+-- Load the UI Library
 local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/ewenja/roblox-hub/refs/heads/main/HihiHub%20ui.lua"))()
 
+-- Create a new UI window
 local ui = lib:CreateWindow({
-    Name = "MyScriptUI",
-    Size = UDim2.new(0, 300, 0, 200),
-    ToggleKeys = { Enum.KeyCode.RightControl }
+    Name = "MyScriptUI", -- Window title (displayed at the top)
+    Size = UDim2.new(0, 300, 0, 200), -- UI size (width x height)
+    ToggleKeys = { Enum.KeyCode.RightControl } -- Toggle UI visibility
 })
 
+-- Add a simple button
 ui:AddButton("Print Hello", function()
-    print("Hello world!")
+    print("Hello world!") -- Will print when the button is clicked
 end)
 
-ui:AddToggle("開關測試", false, function(val)
-    print("Toggle = ", val)
+-- Add a toggle button
+ui:AddToggle("Test Toggle", false, function(val)
+    print("Toggle = ", val) -- Prints true/false when toggled
 end)
 
-ui:AddSlider("亮度", 0, 100, 50, function(val)
-    print("目前亮度：", val)
+-- Add a slider from 0 to 100
+ui:AddSlider("Brightness", 0, 100, 50, function(val)
+    print("Brightness:", val) -- Gets called when the slider value changes
 end)
 
-ui:AddKeybind("觸發測試", Enum.KeyCode.K, function()
-    print("按下了 K 鍵！")
+-- Add a keybind (pressing K will trigger the function)
+ui:AddKeybind("Trigger Test", Enum.KeyCode.K, function()
+    print("Pressed K!")
 end)
+```
+
+---
+
+#### 🔐 About Security:
+
+- Uses `gethui()` if available for extra stealth  
+  (places the UI in a hidden container rather than `CoreGui`).
+- Randomizes names for buttons and frames (e.g., `btn_123456`)  
+  to avoid simple string-based detections.
+- Wraps all callbacks in `pcall()` to prevent errors from breaking the script.
+- Fully draggable, clean layout, and super easy to reuse in any script.
+
+---
