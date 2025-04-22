@@ -118,7 +118,7 @@ function SafeUILib:AddButton(text, callback)
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Font = Enum.Font.SourceSans
     button.TextSize = 14
-    button.Parent = self.Frame
+    button.Parent = self:GetParentFrame()
 
     local corner = Instance.new("UICorner", button)
     corner.Name = "corner_" .. math.random(1000,9999)
@@ -156,7 +156,7 @@ function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
 	dropdown.TextColor3 = Color3.new(1, 1, 1)
 	dropdown.Font = Enum.Font.SourceSans
 	dropdown.TextSize = 14
-	dropdown.Parent = self.Frame
+	dropdown.Parent = self:GetParentFrame()
 
 	local corner = Instance.new("UICorner", dropdown)
 	corner.CornerRadius = UDim.new(0, 6)
@@ -182,7 +182,7 @@ function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
 		optBtn.Font = Enum.Font.SourceSans
 		optBtn.TextSize = 14
 		optBtn.Visible = false
-		optBtn.Parent = self.Frame
+		optBtn.Parent = self:GetParentFrame()
 
 		local btnCorner = Instance.new("UICorner", optBtn)
 		btnCorner.CornerRadius = UDim.new(0, 6)
@@ -215,7 +215,7 @@ function SafeUILib:AddTextbox(label, defaultText, callback)
 	textbox.Font = Enum.Font.SourceSans
 	textbox.TextSize = 14
 	textbox.ClearTextOnFocus = false
-	textbox.Parent = self.Frame
+	textbox.Parent = self:GetParentFrame()
 
 	local corner = Instance.new("UICorner", textbox)
 	corner.CornerRadius = UDim.new(0, 6)
@@ -278,7 +278,7 @@ function SafeUILib:AddToggle(text, default, callback)
     toggle.TextColor3 = Color3.new(1, 1, 1)
     toggle.Font = Enum.Font.SourceSans
     toggle.TextSize = 14
-    toggle.Parent = self.Frame
+    toggle.Parent = self:GetParentFrame()
 
     local corner = Instance.new("UICorner", toggle)
     corner.Name = "corner_" .. math.random(1000,9999)
@@ -301,7 +301,7 @@ end
 function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
     self.Buttons = self.Buttons or {}
     local value = defaultValue or minValue
-    local parentFrame = self.Frame or self.__parent and self.__parent.Frame
+
     local label = Instance.new("TextLabel")
     label.Name = "lbl_" .. math.random(100000,999999)
     label.Size = UDim2.new(1, -20, 0, 20)
@@ -312,14 +312,14 @@ function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = self.Frame
+    label.Parent = self:GetParentFrame()
 
     local sliderBack = Instance.new("Frame")
     sliderBack.Name = "bar_" .. math.random(100000,999999)
     sliderBack.Size = UDim2.new(1, -20, 0, 8)
     sliderBack.Position = UDim2.new(0, 10, 0, self.NextY + 20)
     sliderBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    sliderBack.Parent = self.Frame
+    sliderBack.Parent = self:GetParentFrame()
 
     local backCorner = Instance.new("UICorner", sliderBack)
     backCorner.Name = "corner_" .. math.random(1000,9999)
@@ -362,6 +362,7 @@ function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
     end)
 
     self.NextY = self.NextY + 40
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 function SafeUILib:AddTab(tabName)
     self.Buttons = self.Buttons or {}
@@ -399,7 +400,7 @@ function SafeUILib:AddKeybind(labelText, defaultKey, callback)
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Font = Enum.Font.SourceSans
     button.TextSize = 14
-    button.Parent = self.Frame
+    button.Parent = self:GetParentFrame()
 
     local corner = Instance.new("UICorner", button)
     corner.Name = "corner_" .. math.random(1000,9999)
@@ -429,6 +430,9 @@ function SafeUILib:SwitchTab(tabName)
     for name, tab in pairs(self.Tabs) do
         tab.Visible = (name == tabName)
     end
+end
+function SafeUILib:GetParentFrame()
+    return self.Frame or (self.__parent and self.__parent.Frame)
 end
 -- 完整 return
 return SafeUILib
