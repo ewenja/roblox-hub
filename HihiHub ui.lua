@@ -251,7 +251,5 @@ function SafeUILib:AddKeybind(labelText, defaultKey, callback)
 
     self.NextY = self.NextY + 35
 end
-self.NextY = 10
-self.Buttons = {}
 -- 完整 return
 return SafeUILib
