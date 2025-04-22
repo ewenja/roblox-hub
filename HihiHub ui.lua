@@ -24,14 +24,14 @@ function SafeUILib:CreateWindow(opts)
 
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Name = "Main_" .. math.random(1, 1e6)
-	mainFrame.Size = windowSize
+	mainFrame.Size = UDim2.new(windowSize.X.Scale, windowSize.X.Offset, 0, 40)
 	mainFrame.Position = UDim2.new(0.5, -windowSize.X.Offset / 2, 0.5, -windowSize.Y.Offset / 2)
 	mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	mainFrame.BackgroundColor3 = backgroundColor
 	mainFrame.BorderSizePixel = 0
 	mainFrame.Visible = false
 	mainFrame.Parent = gui
-
+        
 	local corner = Instance.new("UICorner", mainFrame)
 	corner.CornerRadius = UDim.new(0, 6)
         -- UI 標題
@@ -83,13 +83,25 @@ function SafeUILib:CreateWindow(opts)
 			mainFrame.Visible = open
 		end
 	end)
+local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "scroll_" .. math.random(100000, 999999)
+	scroll.Size = UDim2.new(1, 0, 1, -30)
+	scroll.Position = UDim2.new(0, 0, 0, 30)
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.BackgroundTransparency = 1
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.ScrollBarThickness = 4
+	scroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+	scroll.Parent = mainFrame
+
 	local self = setmetatable({
 		Gui = gui,
 		Frame = mainFrame,
+		Scroll = scroll, 
+		Tabs = {},       
 		Buttons = {},
 		NextY = 40
 	}, SafeUILib)
-
 	return self
 end
 function SafeUILib:AddButton(text, callback)
@@ -125,6 +137,7 @@ function SafeUILib:AddButton(text, callback)
 
     table.insert(self.Buttons, button)
     self.NextY = self.NextY + 35
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
 	local selectedIndex = defaultIndex or 1
@@ -208,6 +221,7 @@ function SafeUILib:AddTextbox(label, defaultText, callback)
 	end)
 
 	self.NextY = self.NextY + 35
+        self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 function SafeUILib:Notify(text, duration)
 	local notify = Instance.new("TextLabel")
@@ -274,6 +288,7 @@ function SafeUILib:AddToggle(text, default, callback)
 
     table.insert(self.Buttons, toggle)
     self.NextY = self.NextY + 35
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 
 function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
@@ -340,6 +355,24 @@ function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
 
     self.NextY = self.NextY + 40
 end
+function SafeUILib:AddTab(tabName)
+    local tabId = "tab_" .. tostring(math.random(100000, 999999))
+    local tabFrame = Instance.new("Frame")
+    tabFrame.Name = tabId
+    tabFrame.Size = UDim2.new(1, 0, 0, 0) -- 高度會自動由 ScrollingFrame 控制
+    tabFrame.BackgroundTransparency = 1
+    tabFrame.AutomaticSize = Enum.AutomaticSize.Y
+    tabFrame.Visible = false
+    tabFrame.Parent = self.Scroll
+
+    self.Tabs[tabName] = tabFrame
+
+    return setmetatable({
+        Frame = tabFrame,
+        NextY = 10,
+        __parent = self
+    }, SafeUILib)
+end
 
 function SafeUILib:AddKeybind(labelText, defaultKey, callback)
     local currentKey = defaultKey or Enum.KeyCode.E
@@ -378,6 +411,7 @@ function SafeUILib:AddKeybind(labelText, defaultKey, callback)
     end)
 
     self.NextY = self.NextY + 35
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 -- 完整 return
 return SafeUILib
