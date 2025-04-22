@@ -371,6 +371,7 @@ function SafeUILib:AddTab(tabName)
     return setmetatable({
         Frame = tabFrame,
         NextY = 10,
+        Buttons = {},
         __parent = self
     }, SafeUILib)
 end
