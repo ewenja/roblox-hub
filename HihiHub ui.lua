@@ -15,12 +15,7 @@ function SafeUILib:CreateWindow(opts)
 	gui.DisplayOrder = 999999
 	gui.IgnoreGuiInset = true
 	gui.ResetOnSpawn = false
-
-	if gethui then
-		gui.Parent = gethui()
-	else
-		gui.Parent = game:GetService("CoreGui")
-	end
+	gui.Parent = gethui and gethui() or game:GetService("CoreGui")
 
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Name = "Main_" .. math.random(1, 1e6)
@@ -31,23 +26,24 @@ function SafeUILib:CreateWindow(opts)
 	mainFrame.BorderSizePixel = 0
 	mainFrame.Visible = false
 	mainFrame.Parent = gui
-        
+
 	local corner = Instance.new("UICorner", mainFrame)
 	corner.CornerRadius = UDim.new(0, 6)
-        -- UI 標題
-        local title = Instance.new("TextLabel")
-        local lblName = "lbl_" .. tostring(math.random(10000, 99999))
-        local t = Instance.new("TextLabel")
-        t.Name = lblName
-        t.Size = UDim2.new(1, 0, 0, 30)
-        t.Position = UDim2.new(0, 0, 0, 0)
-        t.BackgroundTransparency = 1
-        t.Text = opts.Name or ("Hub_" .. tostring(math.random(100, 999)))
-        t.TextColor3 = Color3.fromRGB(255, 255, 255)
-        t.Font = Enum.Font.SourceSansBold
-        t.TextSize = 18
-        t.TextStrokeTransparency = 0.8
-        t.Parent = mainFrame
+
+	-- UI 標題
+	local lblName = "lbl_" .. tostring(math.random(10000, 99999))
+	local t = Instance.new("TextLabel")
+	t.Name = lblName
+	t.Size = UDim2.new(1, 0, 0, 30)
+	t.Position = UDim2.new(0, 0, 0, 0)
+	t.BackgroundTransparency = 1
+	t.Text = opts.Name or ("Hub_" .. tostring(math.random(100, 999)))
+	t.TextColor3 = Color3.fromRGB(255, 255, 255)
+	t.Font = Enum.Font.SourceSansBold
+	t.TextSize = 18
+	t.TextStrokeTransparency = 0.8
+	t.Parent = mainFrame
+
 	-- 拖曳功能
 	local dragging, dragStart, startPos
 	mainFrame.InputBegan:Connect(function(input)
@@ -75,7 +71,7 @@ function SafeUILib:CreateWindow(opts)
 		end
 	end)
 
-	-- 顯示/隱藏
+	-- 顯示/隱藏功能
 	local open = false
 	UIS.InputBegan:Connect(function(input, gpe)
 		if not gpe and table.find(toggleKeys, input.KeyCode) then
@@ -83,28 +79,30 @@ function SafeUILib:CreateWindow(opts)
 			mainFrame.Visible = open
 		end
 	end)
--- ✅ 建立滾動框
-local scroll = Instance.new("ScrollingFrame")
-scroll.Name = "scroll_" .. math.random(100000, 999999)
-scroll.Size = UDim2.new(1, 0, 1, -30)
-scroll.Position = UDim2.new(0, 0, 0, 30)
-scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scroll.BackgroundTransparency = 1
-scroll.ScrollBarThickness = 4
-scroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
-scroll.Parent = mainFrame
 
--- ✅ 建立物件並回傳 self
-local self = setmetatable({
-	Gui = gui,
-	Frame = mainFrame,
-	Scroll = scroll,
-	Tabs = {},
-	Buttons = {},
-	NextY = 10
-}, SafeUILib)
-    return self
+	-- 建立滾動框
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Name = "scroll_" .. math.random(100000, 999999)
+	scroll.Size = UDim2.new(1, 0, 1, -30)
+	scroll.Position = UDim2.new(0, 0, 0, 30)
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scroll.BackgroundTransparency = 1
+	scroll.ScrollBarThickness = 4
+	scroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+	scroll.Parent = mainFrame
+
+	-- 回傳 UI 控制物件
+	local self = setmetatable({
+		Gui = gui,
+		Frame = mainFrame,
+		Scroll = scroll,
+		Tabs = {},
+		Buttons = {},
+		NextY = 10
+	}, SafeUILib)
+
+	return self
 end
 
 function SafeUILib:AddButton(text, callback)
