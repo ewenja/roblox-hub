@@ -104,8 +104,8 @@ local self = setmetatable({
 	Buttons = {},
 	NextY = 10
 }, SafeUILib)
-
-return self
+    return self
+end
 
 function SafeUILib:AddButton(text, callback)
     local name = "btn_" .. math.random(100000, 999999)
