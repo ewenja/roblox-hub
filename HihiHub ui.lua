@@ -29,7 +29,7 @@ function SafeUILib:CreateWindow(opts)
     mainFrame.Visible = false
     mainFrame.Parent = gui
 
-    -- 美化
+    -- 美化 gay
     local corner = Instance.new("UICorner", mainFrame)
     corner.CornerRadius = UDim.new(0, 8)
 
@@ -37,7 +37,7 @@ function SafeUILib:CreateWindow(opts)
     stroke.Color = Color3.fromRGB(80, 80, 80)
     stroke.Thickness = 1
 
-    -- 陰影
+    -- 陰影 gay
     local shadow = Instance.new("ImageLabel", mainFrame)
     shadow.Image = "rbxassetid://1316045217"
     shadow.ImageColor3 = Color3.new(0, 0, 0)
@@ -95,7 +95,7 @@ function SafeUILib:AddButton(text, callback)
     stroke.Color = Color3.fromRGB(60, 60, 60)
     stroke.Thickness = 1
 
-    -- Hover 效果
+    -- Hover 效果 gay love
     button.MouseEnter:Connect(function()
         TweenService:Create(button, TweenInfo.new(0.15), {
             BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -213,7 +213,7 @@ function SafeUILib:AddSlider(labelText, minValue, maxValue, defaultValue, callba
         end
     end)
 
-    -- 塞兩個元素
+    -- 塞兩個元素gay gay gay
     table.insert(self.Buttons, label)
     table.insert(self.Buttons, sliderBack)
 end
