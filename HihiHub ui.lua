@@ -3,14 +3,16 @@ SafeUILib.__index = SafeUILib
 
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 function SafeUILib:CreateWindow(opts)
     opts = opts or {}
     local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
     local windowName = opts.Name or tostring(math.random(100000, 999999))
-    local windowSize = opts.Size or UDim2.new(0, 300, 0, 150)
+    local windowSize = opts.Size or UDim2.new(0, 300, 0, 200)
     local backgroundColor = opts.BackgroundColor or Color3.fromRGB(30,30,30)
 
+    -- 🧼 安全隱匿 GUI
     local gui = Instance.new("ScreenGui")
     gui.ResetOnSpawn = false
     gui.Name = windowName
@@ -20,51 +22,49 @@ function SafeUILib:CreateWindow(opts)
         gui.Parent = game:GetService("CoreGui")
     end
 
+    -- 🎨 主框架
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainUI_" .. tostring(math.random(100000,999999))
     mainFrame.Size = windowSize
     mainFrame.Position = UDim2.new(0.5, -windowSize.X.Offset/2, 0.5, -windowSize.Y.Offset/2)
     mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     mainFrame.BackgroundColor3 = backgroundColor
+    mainFrame.BorderSizePixel = 0
     mainFrame.Visible = false
     mainFrame.Parent = gui
 
-    -- 美化 gay
     local corner = Instance.new("UICorner", mainFrame)
-    corner.CornerRadius = UDim.new(0, 8)
+    corner.CornerRadius = UDim.new(0, 6)
 
-    local stroke = Instance.new("UIStroke", mainFrame)
-    stroke.Color = Color3.fromRGB(80, 80, 80)
-    stroke.Thickness = 1
+    -- ☁️ 拖曳功能
+    local dragging, dragInput, dragStart, startPos
 
-    -- 陰影 gay
-    local shadow = Instance.new("ImageLabel", mainFrame)
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.new(0, 0, 0)
-    shadow.ImageTransparency = 0.5
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.Size = UDim2.new(1, 30, 1, 30)
-    shadow.Position = UDim2.new(0.5, -15, 0.5, -15)
-    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-    shadow.BackgroundTransparency = 1
-    shadow.ZIndex = -1
+    mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
 
-    -- 顯示/隱藏熱鍵
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- 🔁 顯示切換快捷鍵
     local open = false
     UIS.InputBegan:Connect(function(input, gpe)
         if not gpe and table.find(toggleKeys, input.KeyCode) then
             open = not open
-            local tween = TweenService:Create(mainFrame, TweenInfo.new(0.25), {
-                Size = open and windowSize or UDim2.new(0, 0, 0, 0)
-            })
-            if open then mainFrame.Visible = true end
-            tween:Play()
-            if not open then
-                tween.Completed:Connect(function()
-                    mainFrame.Visible = false
-                end)
-            end
+            mainFrame.Visible = open
         end
     end)
 
@@ -72,16 +72,16 @@ function SafeUILib:CreateWindow(opts)
         Gui = gui,
         Frame = mainFrame,
         Buttons = {},
+        NextY = 10
     }, SafeUILib)
 
     return self
 end
-
 function SafeUILib:AddButton(text, callback)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, -20, 0, 30)
-    button.Position = UDim2.new(0, 10, 0, 10 + (#self.Buttons * 35))
-    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.Position = UDim2.new(0, 10, 0, self.NextY)
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     button.Text = text
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Font = Enum.Font.SourceSans
@@ -91,23 +91,14 @@ function SafeUILib:AddButton(text, callback)
     local corner = Instance.new("UICorner", button)
     corner.CornerRadius = UDim.new(0, 6)
 
-    local stroke = Instance.new("UIStroke", button)
-    stroke.Color = Color3.fromRGB(60, 60, 60)
-    stroke.Thickness = 1
-
-    -- Hover 效果 gay love
     button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.15), {
-            BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        }):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.15), {
-            BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        }):Play()
+        TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
     end)
 
-    -- 點擊執行
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(45, 45, 45)}):Play()
+    end)
+
     button.MouseButton1Click:Connect(function()
         if callback then
             pcall(callback)
@@ -115,79 +106,73 @@ function SafeUILib:AddButton(text, callback)
     end)
 
     table.insert(self.Buttons, button)
+    self.NextY = self.NextY + 35
 end
-function SafeUILib:AddKeybind(labelText, defaultKey, callback)
-    local currentKey = defaultKey or Enum.KeyCode.E
 
-    local label = Instance.new("TextButton")
-    label.Size = UDim2.new(1, -20, 0, 30)
-    label.Position = UDim2.new(0, 10, 0, 10 + (#self.Buttons * 35))
-    label.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    label.Text = labelText .. " [" .. currentKey.Name .. "]"
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 14
-    label.Parent = self.Frame
+function SafeUILib:AddToggle(text, default, callback)
+    local state = default or false
 
-    local corner = Instance.new("UICorner", label)
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(1, -20, 0, 30)
+    toggle.Position = UDim2.new(0, 10, 0, self.NextY)
+    toggle.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(45, 45, 45)
+    toggle.Text = text .. (state and " [✓]" or " [ ]")
+    toggle.TextColor3 = Color3.new(1, 1, 1)
+    toggle.Font = Enum.Font.SourceSans
+    toggle.TextSize = 14
+    toggle.Parent = self.Frame
+
+    local corner = Instance.new("UICorner", toggle)
     corner.CornerRadius = UDim.new(0, 6)
 
-    local stroke = Instance.new("UIStroke", label)
-    stroke.Color = Color3.fromRGB(60, 60, 60)
-    stroke.Thickness = 1
-
-    local listening = false
-
-    label.MouseButton1Click:Connect(function()
-        label.Text = labelText .. " [Press a key...]"
-        listening = true
-    end)
-
-    UIS.InputBegan:Connect(function(input, gpe)
-        if not gpe then
-            if listening then
-                listening = false
-                currentKey = input.KeyCode
-                label.Text = labelText .. " [" .. currentKey.Name .. "]"
-            elseif input.KeyCode == currentKey and callback then
-                pcall(callback)
-            end
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        toggle.Text = text .. (state and " [✓]" or " [ ]")
+        toggle.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(45, 45, 45)
+        if callback then
+            pcall(callback, state)
         end
     end)
 
-    table.insert(self.Buttons, label)
+    table.insert(self.Buttons, toggle)
+    self.NextY = self.NextY + 35
 end
-function SafeUILib:AddSlider(labelText, minValue, maxValue, defaultValue, callback)
+function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
     local value = defaultValue or minValue
 
+    -- Label
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -20, 0, 20)
-    label.Position = UDim2.new(0, 10, 0, 10 + (#self.Buttons * 35))
+    label.Position = UDim2.new(0, 10, 0, self.NextY)
     label.BackgroundTransparency = 1
-    label.Text = string.format("%s: %d", labelText, value)
+    label.Text = string.format("%s: %d", text, value)
     label.TextColor3 = Color3.new(1,1,1)
     label.Font = Enum.Font.SourceSans
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = self.Frame
 
+    -- Bar Background
     local sliderBack = Instance.new("Frame")
     sliderBack.Size = UDim2.new(1, -20, 0, 8)
-    sliderBack.Position = label.Position + UDim2.new(0, 0, 0, 20)
+    sliderBack.Position = UDim2.new(0, 10, 0, self.NextY + 20)
     sliderBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     sliderBack.Parent = self.Frame
+
     local backCorner = Instance.new("UICorner", sliderBack)
     backCorner.CornerRadius = UDim.new(0, 4)
 
+    -- Bar Fill
     local sliderFill = Instance.new("Frame")
-    sliderFill.Size = UDim2.new((value - minValue)/(maxValue - minValue), 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    sliderFill.Size = UDim2.new((value - minValue) / (maxValue - minValue), 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
     sliderFill.Parent = sliderBack
+
     local fillCorner = Instance.new("UICorner", sliderFill)
     fillCorner.CornerRadius = UDim.new(0, 4)
 
+    -- 滑動處理
     local dragging = false
-
     sliderBack.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
@@ -206,61 +191,54 @@ function SafeUILib:AddSlider(labelText, minValue, maxValue, defaultValue, callba
             local percent = math.clamp(pos / sliderBack.AbsoluteSize.X, 0, 1)
             value = math.floor(minValue + (maxValue - minValue) * percent)
             sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-            label.Text = string.format("%s: %d", labelText, value)
+            label.Text = string.format("%s: %d", text, value)
             if callback then
                 pcall(callback, value)
             end
         end
     end)
 
-    -- 塞兩個元素gay gay gay
-    table.insert(self.Buttons, label)
-    table.insert(self.Buttons, sliderBack)
+    -- 排版間距
+    self.NextY = self.NextY + 40
 end
-function SafeUILib:AddToggle(labelText, defaultValue, callback)
-    local state = defaultValue or false
 
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(1, -20, 0, 30)
-    toggle.Position = UDim2.new(0, 10, 0, 10 + (#self.Buttons * 35))
-    toggle.BackgroundColor3 = state and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(40, 40, 40)
-    toggle.Text = labelText .. (state and " [✓]" or " [ ]")
-    toggle.TextColor3 = Color3.new(1, 1, 1)
-    toggle.Font = Enum.Font.SourceSans
-    toggle.TextSize = 14
-    toggle.Parent = self.Frame
+function SafeUILib:AddKeybind(labelText, defaultKey, callback)
+    local currentKey = defaultKey or Enum.KeyCode.E
+    local listening = false
 
-    local corner = Instance.new("UICorner", toggle)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -20, 0, 30)
+    button.Position = UDim2.new(0, 10, 0, self.NextY)
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    button.Text = labelText .. " [" .. currentKey.Name .. "]"
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 14
+    button.Parent = self.Frame
+
+    local corner = Instance.new("UICorner", button)
     corner.CornerRadius = UDim.new(0, 6)
 
-    local stroke = Instance.new("UIStroke", toggle)
-    stroke.Color = Color3.fromRGB(60, 60, 60)
-    stroke.Thickness = 1
-
-    toggle.MouseEnter:Connect(function()
-        TweenService:Create(toggle, TweenInfo.new(0.15), {
-            BackgroundColor3 = state and Color3.fromRGB(120, 220, 120) or Color3.fromRGB(60, 60, 60)
-        }):Play()
+    button.MouseButton1Click:Connect(function()
+        button.Text = labelText .. " [Press a key...]"
+        listening = true
     end)
 
-    toggle.MouseLeave:Connect(function()
-        TweenService:Create(toggle, TweenInfo.new(0.15), {
-            BackgroundColor3 = state and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(40, 40, 40)
-        }):Play()
-    end)
-
-    toggle.MouseButton1Click:Connect(function()
-        state = not state
-        toggle.Text = labelText .. (state and " [✓]" or " [ ]")
-        TweenService:Create(toggle, TweenInfo.new(0.15), {
-            BackgroundColor3 = state and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(40, 40, 40)
-        }):Play()
-        if callback then
-            pcall(callback, state)
+    UIS.InputBegan:Connect(function(input, gpe)
+        if not gpe then
+            if listening then
+                listening = false
+                currentKey = input.KeyCode
+                button.Text = labelText .. " [" .. currentKey.Name .. "]"
+            elseif input.KeyCode == currentKey then
+                if callback then pcall(callback) end
+            end
         end
     end)
 
-    table.insert(self.Buttons, toggle)
+    self.NextY = self.NextY + 35
 end
-
+self.NextY = 10
+self.Buttons = {}
+-- 完整 return
 return SafeUILib
