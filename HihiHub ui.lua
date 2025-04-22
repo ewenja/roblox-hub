@@ -19,7 +19,7 @@ function SafeUILib:CreateWindow(opts)
 
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Name = "Main_" .. math.random(1, 1e6)
-	mainFrame.Size = UDim2.new(windowSize.X.Scale, windowSize.X.Offset, 0, 40)
+        mainFrame.Size = UDim2.new(windowSize.X.Scale, windowSize.X.Offset, windowSize.Y.Scale, windowSize.Y.Offset)
 	mainFrame.Position = UDim2.new(0.5, -windowSize.X.Offset / 2, 0.5, -windowSize.Y.Offset / 2)
 	mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	mainFrame.BackgroundColor3 = backgroundColor
