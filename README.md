@@ -33,9 +33,9 @@ local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/ewenja/ro
 
 -- Create a new UI window
 local ui = lib:CreateWindow({
-    Name = "MyScriptUI", -- Title at the top
-    Size = UDim2.new(0, 300, 0, 200), -- UI size (width x height)
-    ToggleKeys = { Enum.KeyCode.RightControl } -- Toggle UI visibility
+    Name = "MyScriptUI", -- Displayed at the top of the UI
+    Size = UDim2.new(0, 300, 0, 200), -- Window size (width, height)
+    ToggleKeys = { Enum.KeyCode.RightControl } -- Key(s) to toggle visibility
 })
 
 -- Add a simple button
