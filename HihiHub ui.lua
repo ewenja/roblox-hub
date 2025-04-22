@@ -3,20 +3,20 @@ SafeUILib.__index = SafeUILib
 
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 function SafeUILib:CreateWindow(opts)
 	opts = opts or {}
 	local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
 	local windowName = opts.Name or tostring(math.random(100000, 999999))
 	local windowSize = opts.Size or UDim2.new(0, 300, 0, 200)
-	local backgroundColor = opts.BackgroundColor or Color3.fromRGB(30,30,30)
+	local backgroundColor = opts.BackgroundColor or Color3.fromRGB(30, 30, 30)
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = windowName
 	gui.DisplayOrder = 999999
 	gui.IgnoreGuiInset = true
 	gui.ResetOnSpawn = false
+
 	if gethui then
 		gui.Parent = gethui()
 	else
@@ -37,7 +37,7 @@ function SafeUILib:CreateWindow(opts)
 	corner.CornerRadius = UDim.new(0, 6)
 
 	-- 拖曳功能
-	local dragging, dragInput, dragStart, startPos
+	local dragging, dragStart, startPos
 	mainFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
@@ -63,7 +63,7 @@ function SafeUILib:CreateWindow(opts)
 		end
 	end)
 
-	-- 顯示切換熱鍵
+	-- 顯示/隱藏
 	local open = false
 	UIS.InputBegan:Connect(function(input, gpe)
 		if not gpe and table.find(toggleKeys, input.KeyCode) then
@@ -71,7 +71,6 @@ function SafeUILib:CreateWindow(opts)
 			mainFrame.Visible = open
 		end
 	end)
-
 	local self = setmetatable({
 		Gui = gui,
 		Frame = mainFrame,
