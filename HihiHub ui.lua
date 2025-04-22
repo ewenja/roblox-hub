@@ -83,6 +83,30 @@ function SafeUILib:CreateWindow(opts)
 			mainFrame.Visible = open
 		end
 	end)
+-- ✅ 建立滾動框
+local scroll = Instance.new("ScrollingFrame")
+scroll.Name = "scroll_" .. math.random(100000, 999999)
+scroll.Size = UDim2.new(1, 0, 1, -30)
+scroll.Position = UDim2.new(0, 0, 0, 30)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 4
+scroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+scroll.Parent = mainFrame
+
+-- ✅ 建立物件並回傳 self
+local self = setmetatable({
+	Gui = gui,
+	Frame = mainFrame,
+	Scroll = scroll,
+	Tabs = {},
+	Buttons = {},
+	NextY = 10
+}, SafeUILib)
+
+return self
+
 function SafeUILib:AddButton(text, callback)
     local name = "btn_" .. math.random(100000, 999999)
     local button = Instance.new("TextButton")
