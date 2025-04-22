@@ -106,7 +106,9 @@ function SafeUILib:CreateWindow(opts)
 end
 
 function SafeUILib:AddButton(text, callback)
+    self.Buttons = self.Buttons or {}
     local name = "btn_" .. math.random(100000, 999999)
+    local parentFrame = self.Frame or self.__parent and self.__parent.Frame
     local button = Instance.new("TextButton")
     button.Name = name
     button.Size = UDim2.new(1, -20, 0, 30)
@@ -141,9 +143,10 @@ function SafeUILib:AddButton(text, callback)
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
+        self.Buttons = self.Buttons or {}
 	local selectedIndex = defaultIndex or 1
 	local selectedText = options[selectedIndex] or "Select"
-
+        local parentFrame = self.Frame or self.__parent and self.__parent.Frame
 	local dropdown = Instance.new("TextButton")
 	dropdown.Name = "dropdown_" .. math.random(100000, 999999)
 	dropdown.Size = UDim2.new(1, -20, 0, 30)
@@ -199,6 +202,8 @@ function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
 	self.NextY = self.NextY + (#options * 25) + 40
 end
 function SafeUILib:AddTextbox(label, defaultText, callback)
+        self.Buttons = self.Buttons or {}
+        local parentFrame = self.Frame or self.__parent and self.__parent.Frame
 	local textbox = Instance.new("TextBox")
 	textbox.Name = "txt_" .. math.random(100000, 999999)
 	textbox.Size = UDim2.new(1, -20, 0, 30)
@@ -260,9 +265,10 @@ function SafeUILib:Notify(text, duration)
 end
 
 function SafeUILib:AddToggle(text, default, callback)
+    self.Buttons = self.Buttons or {}
     local name = "toggle_" .. math.random(100000, 999999)
     local state = default or false
-
+    local parentFrame = self.Frame or self.__parent and self.__parent.Frame
     local toggle = Instance.new("TextButton")
     toggle.Name = name
     toggle.Size = UDim2.new(1, -20, 0, 30)
@@ -293,8 +299,9 @@ function SafeUILib:AddToggle(text, default, callback)
 end
 
 function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
+    self.Buttons = self.Buttons or {}
     local value = defaultValue or minValue
-
+    local parentFrame = self.Frame or self.__parent and self.__parent.Frame
     local label = Instance.new("TextLabel")
     label.Name = "lbl_" .. math.random(100000,999999)
     label.Size = UDim2.new(1, -20, 0, 20)
@@ -357,7 +364,9 @@ function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
     self.NextY = self.NextY + 40
 end
 function SafeUILib:AddTab(tabName)
+    self.Buttons = self.Buttons or {}
     local tabId = "tab_" .. tostring(math.random(100000, 999999))
+    local parentFrame = self.Frame or self.__parent and self.__parent.Frame
     local tabFrame = Instance.new("Frame")
     tabFrame.Name = tabId
     tabFrame.Size = UDim2.new(1, 0, 0, 0) -- 高度會自動由 ScrollingFrame 控制
@@ -377,9 +386,10 @@ function SafeUILib:AddTab(tabName)
 end
 
 function SafeUILib:AddKeybind(labelText, defaultKey, callback)
+    self.Buttons = self.Buttons or {}
     local currentKey = defaultKey or Enum.KeyCode.E
     local listening = false
-
+    local parentFrame = self.Frame or self.__parent and self.__parent.Frame
     local button = Instance.new("TextButton")
     button.Name = "keybind_" .. math.random(100000,999999)
     button.Size = UDim2.new(1, -20, 0, 30)
