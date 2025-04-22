@@ -91,5 +91,5 @@ ui:Notify("✅ Script loaded successfully!", 3)
   to prevent simple string-based detection from anti-cheat systems.
 - 🧱 All callback functions are wrapped in `pcall()` for fault tolerance.
 - 🧼 Clean and minimal UI, super easy to reuse in any script.
-
+-  https://github.com/ewenja/roblox-hub/blob/main/HihiHub%20ui.lua
 ---
