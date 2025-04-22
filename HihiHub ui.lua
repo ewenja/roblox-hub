@@ -6,76 +6,80 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 function SafeUILib:CreateWindow(opts)
-    opts = opts or {}
-    local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
-    local windowName = opts.Name or tostring(math.random(100000, 999999))
-    local windowSize = opts.Size or UDim2.new(0, 300, 0, 200)
-    local backgroundColor = opts.BackgroundColor or Color3.fromRGB(30,30,30)
+	opts = opts or {}
+	local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
+	local windowName = opts.Name or tostring(math.random(100000, 999999))
+	local windowSize = opts.Size or UDim2.new(0, 300, 0, 200)
+	local backgroundColor = opts.BackgroundColor or Color3.fromRGB(30,30,30)
 
-    --  安全隱匿 GUI
-    local gui = Instance.new("ScreenGui")
-    gui.ResetOnSpawn = false
-    gui.Name = windowName
-    if gethui then
-        gui.Parent = gethui()
-    else
-        gui.Parent = game:GetService("CoreGui")
-    end
+	local gui = Instance.new("ScreenGui")
+	gui.Name = windowName
+	gui.DisplayOrder = 999999
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	if gethui then
+		gui.Parent = gethui()
+	else
+		gui.Parent = game:GetService("CoreGui")
+	end
 
-    --  主框架
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainUI_" .. tostring(math.random(100000,999999))
-    mainFrame.Size = windowSize
-    mainFrame.Position = UDim2.new(0.5, -windowSize.X.Offset/2, 0.5, -windowSize.Y.Offset/2)
-    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    mainFrame.BackgroundColor3 = backgroundColor
-    mainFrame.BorderSizePixel = 0
-    mainFrame.Visible = false
-    mainFrame.Parent = gui
+	local mainFrame = Instance.new("Frame")
+	mainFrame.Name = "Main_" .. math.random(1, 1e6)
+	mainFrame.Size = windowSize
+	mainFrame.Position = UDim2.new(0.5, -windowSize.X.Offset / 2, 0.5, -windowSize.Y.Offset / 2)
+	mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	mainFrame.BackgroundColor3 = backgroundColor
+	mainFrame.BorderSizePixel = 0
+	mainFrame.Visible = false
+	mainFrame.Parent = gui
 
-    local corner = Instance.new("UICorner", mainFrame)
-    corner.CornerRadius = UDim.new(0, 6)
+	local corner = Instance.new("UICorner", mainFrame)
+	corner.CornerRadius = UDim.new(0, 6)
 
-    -- ☁ 拖曳功能
-    local dragging, dragInput, dragStart, startPos
+	-- 拖曳功能
+	local dragging, dragInput, dragStart, startPos
+	mainFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = mainFrame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
 
-    mainFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = mainFrame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			mainFrame.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
 
-    UIS.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStart
-            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
+	-- 顯示切換熱鍵
+	local open = false
+	UIS.InputBegan:Connect(function(input, gpe)
+		if not gpe and table.find(toggleKeys, input.KeyCode) then
+			open = not open
+			mainFrame.Visible = open
+		end
+	end)
 
-    --  顯示切換快捷鍵
-    local open = false
-    UIS.InputBegan:Connect(function(input, gpe)
-        if not gpe and table.find(toggleKeys, input.KeyCode) then
-            open = not open
-            mainFrame.Visible = open
-        end
-    end)
+	local self = setmetatable({
+		Gui = gui,
+		Frame = mainFrame,
+		Buttons = {},
+		NextY = 10
+	}, SafeUILib)
 
-    local self = setmetatable({
-        Gui = gui,
-        Frame = mainFrame,
-        Buttons = {},
-        NextY = 10
-    }, SafeUILib)
-
-    return self
+	return self
 end
 function SafeUILib:AddButton(text, callback)
     local button = Instance.new("TextButton")
