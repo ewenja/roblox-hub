@@ -126,6 +126,123 @@ function SafeUILib:AddButton(text, callback)
     table.insert(self.Buttons, button)
     self.NextY = self.NextY + 35
 end
+function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
+	local selectedIndex = defaultIndex or 1
+	local selectedText = options[selectedIndex] or "Select"
+
+	local dropdown = Instance.new("TextButton")
+	dropdown.Name = "dropdown_" .. math.random(100000, 999999)
+	dropdown.Size = UDim2.new(1, -20, 0, 30)
+	dropdown.Position = UDim2.new(0, 10, 0, self.NextY)
+	dropdown.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	dropdown.Text = title .. ": " .. selectedText
+	dropdown.TextColor3 = Color3.new(1, 1, 1)
+	dropdown.Font = Enum.Font.SourceSans
+	dropdown.TextSize = 14
+	dropdown.Parent = self.Frame
+
+	local corner = Instance.new("UICorner", dropdown)
+	corner.CornerRadius = UDim.new(0, 6)
+
+	local isOpen = false
+	local optionButtons = {}
+
+	dropdown.MouseButton1Click:Connect(function()
+		isOpen = not isOpen
+		for _, btn in pairs(optionButtons) do
+			btn.Visible = isOpen
+		end
+	end)
+
+	for i, opt in ipairs(options) do
+		local optBtn = Instance.new("TextButton")
+		optBtn.Name = "opt_" .. math.random(100000, 999999)
+		optBtn.Size = UDim2.new(1, -40, 0, 25)
+		optBtn.Position = UDim2.new(0, 20, 0, self.NextY + 30 + ((i - 1) * 25))
+		optBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		optBtn.Text = opt
+		optBtn.TextColor3 = Color3.new(1, 1, 1)
+		optBtn.Font = Enum.Font.SourceSans
+		optBtn.TextSize = 14
+		optBtn.Visible = false
+		optBtn.Parent = self.Frame
+
+		local btnCorner = Instance.new("UICorner", optBtn)
+		btnCorner.CornerRadius = UDim.new(0, 6)
+
+		optBtn.MouseButton1Click:Connect(function()
+			selectedIndex = i
+			selectedText = opt
+			dropdown.Text = title .. ": " .. opt
+			isOpen = false
+			for _, b in pairs(optionButtons) do b.Visible = false end
+			if callback then pcall(callback, opt) end
+		end)
+
+		table.insert(optionButtons, optBtn)
+	end
+
+	self.NextY = self.NextY + (#options * 25) + 40
+end
+function SafeUILib:AddTextbox(label, defaultText, callback)
+	local textbox = Instance.new("TextBox")
+	textbox.Name = "txt_" .. math.random(100000, 999999)
+	textbox.Size = UDim2.new(1, -20, 0, 30)
+	textbox.Position = UDim2.new(0, 10, 0, self.NextY)
+	textbox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	textbox.PlaceholderText = label
+	textbox.Text = defaultText or ""
+	textbox.TextColor3 = Color3.new(1, 1, 1)
+	textbox.Font = Enum.Font.SourceSans
+	textbox.TextSize = 14
+	textbox.ClearTextOnFocus = false
+	textbox.Parent = self.Frame
+
+	local corner = Instance.new("UICorner", textbox)
+	corner.CornerRadius = UDim.new(0, 6)
+
+	textbox.FocusLost:Connect(function(enterPressed)
+		if enterPressed and callback then
+			pcall(callback, textbox.Text)
+		end
+	end)
+
+	self.NextY = self.NextY + 35
+end
+function SafeUILib:Notify(text, duration)
+	local notify = Instance.new("TextLabel")
+	notify.Name = "notify_" .. math.random(100000, 999999)
+	notify.Size = UDim2.new(0, 250, 0, 40)
+	notify.Position = UDim2.new(1, -260, 1, -50)
+	notify.AnchorPoint = Vector2.new(1, 1)
+	notify.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	notify.Text = text
+	notify.TextColor3 = Color3.new(1, 1, 1)
+	notify.Font = Enum.Font.SourceSansBold
+	notify.TextSize = 16
+	notify.Parent = self.Gui
+
+	local corner = Instance.new("UICorner", notify)
+	corner.CornerRadius = UDim.new(0, 6)
+
+	notify.BackgroundTransparency = 1
+	notify.TextTransparency = 1
+	notify:TweenSizeAndPosition(
+		UDim2.new(0, 250, 0, 40),
+		UDim2.new(1, -260, 1, -60),
+		Enum.EasingDirection.Out,
+		Enum.EasingStyle.Quad,
+		0.25,
+		true
+	)
+
+	notify.BackgroundTransparency = 0
+	notify.TextTransparency = 0
+
+	task.delay(duration or 3, function()
+		notify:Destroy()
+	end)
+end
 
 function SafeUILib:AddToggle(text, default, callback)
     local name = "toggle_" .. math.random(100000, 999999)
