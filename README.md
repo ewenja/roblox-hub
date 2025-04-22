@@ -3,7 +3,7 @@
 ### 🛡️ HihiHub UI Library
 
 A lightweight and **anti-detection friendly** UI library for Roblox scripts.  
-It supports customizable controls, randomized element names, toggle hotkeys, and more — all in a single standalone file.
+It supports scrollable interfaces, dynamic tab support, randomized element names, toggle hotkeys, and more — all in a single standalone file.
 
 ---
 
@@ -13,8 +13,12 @@ It supports customizable controls, randomized element names, toggle hotkeys, and
 - Toggle switch UI: `AddToggle`
 - Sliders with value range: `AddSlider`
 - Keybinding support: `AddKeybind`
+- Text input support: `AddTextbox`
+- Dropdown selection: `AddDropdown`
 - Built-in UI toggle (default: RightCtrl / Insert)
 - Draggable UI window
+- Scrollable content
+- Tab system (`AddTab`, `SwitchTab`)
 - Rounded corners and smooth transitions
 - Randomized element names (for extra obfuscation)
 - Zero external dependencies — plug and play!
@@ -29,41 +33,63 @@ local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/ewenja/ro
 
 -- Create a new UI window
 local ui = lib:CreateWindow({
-    Name = "MyScriptUI", -- Window title (displayed at the top)
+    Name = "MyScriptUI", -- Title at the top
     Size = UDim2.new(0, 300, 0, 200), -- UI size (width x height)
     ToggleKeys = { Enum.KeyCode.RightControl } -- Toggle UI visibility
 })
 
 -- Add a simple button
 ui:AddButton("Print Hello", function()
-    print("Hello world!") -- Will print when the button is clicked
+    print("Hello world!")
 end)
 
--- Add a toggle button
-ui:AddToggle("Test Toggle", false, function(val)
-    print("Toggle = ", val) -- Prints true/false when toggled
+-- Add a toggle switch
+ui:AddToggle("Enable Feature", false, function(val)
+    print("Toggle =", val)
 end)
 
--- Add a slider from 0 to 100
-ui:AddSlider("Brightness", 0, 100, 50, function(val)
-    print("Brightness:", val) -- Gets called when the slider value changes
+-- Add a slider
+ui:AddSlider("Volume", 0, 100, 50, function(val)
+    print("Volume:", val)
 end)
 
--- Add a keybind (pressing K will trigger the function)
-ui:AddKeybind("Trigger Test", Enum.KeyCode.K, function()
+-- Add a keybind
+ui:AddKeybind("Trigger Action", Enum.KeyCode.K, function()
     print("Pressed K!")
 end)
+
+-- Add a textbox
+ui:AddTextbox("Enter Name", "Player123", function(text)
+    print("Input:", text)
+end)
+
+-- Add a dropdown
+ui:AddDropdown("Choose Weapon", {"AK", "M4", "AWP"}, 1, function(choice)
+    print("Selected:", choice)
+end)
+
+-- Add a tab (for modular UI)
+local settingsTab = ui:AddTab("Settings")
+settingsTab:AddButton("Reset", function()
+    print("Reset clicked!")
+end)
+
+-- Switch to tab
+ui:SwitchTab("Settings")
+
+-- Show a notification
+ui:Notify("✅ Script loaded successfully!", 3)
 ```
 
 ---
 
 #### 🔐 About Security:
 
-- Uses `gethui()` if available for extra stealth  
-  (places the UI in a hidden container rather than `CoreGui`).
-- Randomizes names for buttons and frames (e.g., `btn_123456`)  
-  to avoid simple string-based detections.
-- Wraps all callbacks in `pcall()` to prevent errors from breaking the script.
-- Fully draggable, clean layout, and super easy to reuse in any script.
+- ✅ Uses `gethui()` if available to hide the GUI from detection tools  
+  *(e.g., avoids `CoreGui` when possible).*
+- 🔒 Randomized element names (e.g. `btn_183002`, `tab_394001`)  
+  to prevent simple string-based detection from anti-cheat systems.
+- 🧱 All callback functions are wrapped in `pcall()` for fault tolerance.
+- 🧼 Clean and minimal UI, super easy to reuse in any script.
 
 ---
