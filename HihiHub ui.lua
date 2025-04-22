@@ -99,7 +99,7 @@ function SafeUILib:CreateWindow(opts)
 		Scroll = scroll,
 		Tabs = {},
 		Buttons = {},
-		NextY = 10
+		NextY = 40
 	}, SafeUILib)
 
 	return self
