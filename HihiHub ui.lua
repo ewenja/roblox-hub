@@ -83,27 +83,6 @@ function SafeUILib:CreateWindow(opts)
 			mainFrame.Visible = open
 		end
 	end)
-local scroll = Instance.new("ScrollingFrame")
-	scroll.Name = "scroll_" .. math.random(100000, 999999)
-	scroll.Size = UDim2.new(1, 0, 1, -30)
-	scroll.Position = UDim2.new(0, 0, 0, 30)
-	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scroll.BackgroundTransparency = 1
-	scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	scroll.ScrollBarThickness = 4
-	scroll.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
-	scroll.Parent = mainFrame
-
-	local self = setmetatable({
-		Gui = gui,
-		Frame = mainFrame,
-		Scroll = scroll, 
-		Tabs = {},       
-		Buttons = {},
-		NextY = 40
-	}, SafeUILib)
-	return self
-end
 function SafeUILib:AddButton(text, callback)
     local name = "btn_" .. math.random(100000, 999999)
     local button = Instance.new("TextButton")
@@ -412,6 +391,11 @@ function SafeUILib:AddKeybind(labelText, defaultKey, callback)
 
     self.NextY = self.NextY + 35
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
+end
+function SafeUILib:SwitchTab(tabName)
+    for name, tab in pairs(self.Tabs) do
+        tab.Visible = (name == tabName)
+    end
 end
 -- 完整 return
 return SafeUILib
