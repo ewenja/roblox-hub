@@ -3,7 +3,6 @@ SafeUILib.__index = SafeUILib
 
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-
 function SafeUILib:CreateWindow(opts)
 	opts = opts or {}
 	local toggleKeys = opts.ToggleKeys or { Enum.KeyCode.RightControl, Enum.KeyCode.Insert }
@@ -35,7 +34,20 @@ function SafeUILib:CreateWindow(opts)
 
 	local corner = Instance.new("UICorner", mainFrame)
 	corner.CornerRadius = UDim.new(0, 6)
-
+        -- UI 標題
+        local title = Instance.new("TextLabel")
+        local lblName = "lbl_" .. tostring(math.random(10000, 99999))
+        local t = Instance.new("TextLabel")
+        t.Name = lblName
+        t.Size = UDim2.new(1, 0, 0, 30)
+        t.Position = UDim2.new(0, 0, 0, 0)
+        t.BackgroundTransparency = 1
+        t.Text = opts.Name or ("Hub_" .. tostring(math.random(100, 999)))
+        t.TextColor3 = Color3.fromRGB(255, 255, 255)
+        t.Font = Enum.Font.SourceSansBold
+        t.TextSize = 18
+        t.TextStrokeTransparency = 0.8
+        t.Parent = mainFrame
 	-- 拖曳功能
 	local dragging, dragStart, startPos
 	mainFrame.InputBegan:Connect(function(input)
@@ -75,7 +87,7 @@ function SafeUILib:CreateWindow(opts)
 		Gui = gui,
 		Frame = mainFrame,
 		Buttons = {},
-		NextY = 10
+		NextY = 40
 	}, SafeUILib)
 
 	return self
