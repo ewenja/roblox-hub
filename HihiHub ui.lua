@@ -206,7 +206,6 @@ end
 function SafeUILib:AddColorPicker(label, defaultColor, callback)
     self.Buttons = self.Buttons or {}
     local parentFrame = self:GetParentFrame()
-
     local currentColor = defaultColor or Color3.new(1, 1, 1)
 
     local function randName() return "c_" .. tostring(math.random(100000, 999999)) end
@@ -223,9 +222,12 @@ function SafeUILib:AddColorPicker(label, defaultColor, callback)
     title.TextSize = 14
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = parentFrame
-
     self.NextY += 20
 
+    -- 儲存目前正在拖曳的滑桿
+    local activeSlider = nil
+
+    -- 滑桿生成
     local function makeSlider(name, startValue, color)
         local container = Instance.new("Frame")
         container.Name = randName()
@@ -251,50 +253,55 @@ function SafeUILib:AddColorPicker(label, defaultColor, callback)
         fill.Parent = slider
         Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
 
-        -- 偵測滑動
-        local dragging = false
-
         slider.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-            end
-        end)
-
-        game:GetService("UserInputService").InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end)
-
-        game:GetService("UserInputService").InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local percent = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-                fill.Size = UDim2.new(percent, 0, 1, 0)
-
-                if name == "R" then
-                    currentColor = Color3.new(percent, currentColor.G, currentColor.B)
-                elseif name == "G" then
-                    currentColor = Color3.new(currentColor.R, percent, currentColor.B)
-                elseif name == "B" then
-                    currentColor = Color3.new(currentColor.R, currentColor.G, percent)
-                end
-
-                if callback then
-                    pcall(callback, currentColor)
-                end
+                SafeUILib.__DraggingLocked = true
+                activeSlider = {
+                    slider = slider,
+                    fill = fill,
+                    name = name
+                }
             end
         end)
 
         self.NextY += 25
     end
 
-    -- 三條滑桿
+    -- 一次綁定拖曳處理事件（全部滑桿共用）
+    UIS.InputChanged:Connect(function(input)
+        if activeSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local percent = math.clamp((input.Position.X - activeSlider.slider.AbsolutePosition.X) / activeSlider.slider.AbsoluteSize.X, 0, 1)
+            activeSlider.fill.Size = UDim2.new(percent, 0, 1, 0)
+
+            if activeSlider.name == "R" then
+                currentColor = Color3.new(percent, currentColor.G, currentColor.B)
+            elseif activeSlider.name == "G" then
+                currentColor = Color3.new(currentColor.R, percent, currentColor.B)
+            elseif activeSlider.name == "B" then
+                currentColor = Color3.new(currentColor.R, currentColor.G, percent)
+            end
+
+            if callback then
+                pcall(callback, currentColor)
+            end
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            activeSlider = nil
+            SafeUILib.__DraggingLocked = false
+        end
+    end)
+
+    -- 建立三條滑桿
     makeSlider("R", currentColor.R, Color3.fromRGB(255, 0, 0))
     makeSlider("G", currentColor.G, Color3.fromRGB(0, 255, 0))
     makeSlider("B", currentColor.B, Color3.fromRGB(0, 0, 255))
 
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
+
 function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
     self.Buttons = self.Buttons or {}
     local parent = self:GetParentFrame()
@@ -359,7 +366,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
     gradientLight.Rotation = 90
     gradientLight.Parent = overlay
 
-    -- 🔘 點選圈圈（指示器）
+    --  點選圈圈（指示器）
     local dot = Instance.new("Frame")
     dot.Name = randName()
     dot.Size = UDim2.new(0, 6, 0, 6)
@@ -391,13 +398,27 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
         end
     end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and input.UserInputState == Enum.UserInputState.Change then
-            if input.UserInputType == Enum.UserInputType.MouseMovement and input:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-                updateColor(input.Position)
-            end
-        end
-    end)
+    local draggingColor = false -- 新增旗標避免 UI 被拖動
+
+palette.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingColor = true
+		updateColor(input.Position)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingColor = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if draggingColor and input.UserInputType == Enum.UserInputType.MouseMovement then
+		updateColor(input.Position)
+	end
+end)
+
 
     self.NextY += 130
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
