@@ -201,6 +201,99 @@ function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
 
 	self.NextY = self.NextY + (#options * 25) + 40
 end
+function SafeUILib:AddColorPicker(label, defaultColor, callback)
+    self.Buttons = self.Buttons or {}
+    local parentFrame = self:GetParentFrame()
+
+    local currentColor = defaultColor or Color3.new(1, 1, 1)
+
+    local function randName() return "c_" .. tostring(math.random(100000, 999999)) end
+
+    -- 標題
+    local title = Instance.new("TextLabel")
+    title.Name = randName()
+    title.Size = UDim2.new(1, -20, 0, 20)
+    title.Position = UDim2.new(0, 10, 0, self.NextY)
+    title.BackgroundTransparency = 1
+    title.Text = label
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.SourceSans
+    title.TextSize = 14
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = parentFrame
+
+    self.NextY += 20
+
+    local function makeSlider(name, startValue, color)
+        local container = Instance.new("Frame")
+        container.Name = randName()
+        container.Size = UDim2.new(1, -20, 0, 20)
+        container.Position = UDim2.new(0, 10, 0, self.NextY)
+        container.BackgroundTransparency = 1
+        container.Parent = parentFrame
+
+        local slider = Instance.new("Frame")
+        slider.Name = randName()
+        slider.Size = UDim2.new(1, 0, 0, 6)
+        slider.Position = UDim2.new(0, 0, 0.5, -3)
+        slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        slider.BorderSizePixel = 0
+        slider.Parent = container
+        Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 3)
+
+        local fill = Instance.new("Frame")
+        fill.Name = randName()
+        fill.Size = UDim2.new(startValue, 0, 1, 0)
+        fill.BackgroundColor3 = color
+        fill.BorderSizePixel = 0
+        fill.Parent = slider
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+
+        -- 偵測滑動
+        local dragging = false
+
+        slider.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+            end
+        end)
+
+        game:GetService("UserInputService").InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+
+        game:GetService("UserInputService").InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local percent = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+                fill.Size = UDim2.new(percent, 0, 1, 0)
+
+                if name == "R" then
+                    currentColor = Color3.new(percent, currentColor.G, currentColor.B)
+                elseif name == "G" then
+                    currentColor = Color3.new(currentColor.R, percent, currentColor.B)
+                elseif name == "B" then
+                    currentColor = Color3.new(currentColor.R, currentColor.G, percent)
+                end
+
+                if callback then
+                    pcall(callback, currentColor)
+                end
+            end
+        end)
+
+        self.NextY += 25
+    end
+
+    -- 三條滑桿
+    makeSlider("R", currentColor.R, Color3.fromRGB(255, 0, 0))
+    makeSlider("G", currentColor.G, Color3.fromRGB(0, 255, 0))
+    makeSlider("B", currentColor.B, Color3.fromRGB(0, 0, 255))
+
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
+end
+
 function SafeUILib:AddCustomButton(opts)
     self.Buttons = self.Buttons or {}
     local name = "cb_" .. math.random(100000, 999999)
