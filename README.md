@@ -79,6 +79,20 @@ ui:AddCustomButton({
         print("Custom styled button clicked!")
     end
 })
+ui:AddTextbox("ESPColor (R,G,B)", "0,255,0", function(input) 
+    local r, g, b = input:match("(%d+),(%d+),(%d+)")
+    if r and g and b then
+        local color = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+        -- esp is here
+        print("選擇顏色:", color)
+    end
+end)
+ui:AddColorPicker("ESPColor", Color3.fromRGB(255, 255, 255), function(newColor)
+    print("Color：", newColor)
+end)
+ui:AddColorPickerNative("選擇顏色", Color3.fromRGB(255, 0, 0), function(color)
+    print("你選擇的顏色是：", color)
+end)
 
 ui:SwitchTab("Settings")
 ui:Notify("✅ Script loaded!", 3)
