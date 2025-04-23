@@ -1,95 +1,84 @@
 ---
 
-### 🛡️ HihiHub UI Library
+## 🛡️ HihiHub UI Library
 
-A lightweight and **anti-detection friendly** UI library for Roblox scripts.  
-It supports scrollable interfaces, dynamic tab support, randomized element names, toggle hotkeys, and more — all in a single standalone file.
-
----
-
-#### ✅ Features:
-
-- Custom button creation: `AddButton`
-- Toggle switch UI: `AddToggle`
-- Sliders with value range: `AddSlider`
-- Keybinding support: `AddKeybind`
-- Text input support: `AddTextbox`
-- Dropdown selection: `AddDropdown`
-- Built-in UI toggle (default: RightCtrl / Insert)
-- Draggable UI window
-- Scrollable content
-- Tab system (`AddTab`, `SwitchTab`)
-- Rounded corners and smooth transitions
-- Randomized element names (for extra obfuscation)
-- Zero external dependencies — plug and play!
+A lightweight and **anti-detection** Roblox UI library — fully standalone, scrollable, tab-supported, and obfuscated.
 
 ---
 
-#### 🧪 Example Usage:
+### ✅ Features
+
+- `AddButton` — Create custom buttons  
+- `AddToggle` / `AddRoundToggle` — Flat or rounded toggle switches with animation  
+- `AddSlider` — Adjustable slider with min/max and callback  
+- `AddKeybind` — Bind actions to key presses  
+- `AddTextbox` — Input field for user text  
+- `AddDropdown` — Dropdown selection menus  
+- `Notify` — Show toast-like notifications  
+- `AddTab` / `SwitchTab` — Tabbed UI system  
+- Rounded corners & smooth transitions  
+- Built-in hotkey toggle (e.g., RightCtrl / Insert)  
+- Draggable & scrollable interface  
+- Randomized UI element names for anti-cheat bypass  
+- No dependencies — just plug & play!
+
+---
+
+### 🧪 Example
 
 ```lua
--- Load the UI Library
 local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/ewenja/roblox-hub/refs/heads/main/HihiHub%20ui.lua"))()
-
--- Create a new UI window
 local ui = lib:CreateWindow({
-    Name = "MyScriptUI", -- Displayed at the top of the UI
-    Size = UDim2.new(0, 300, 0, 200), -- Window size (width, height)
-    ToggleKeys = { Enum.KeyCode.RightControl } -- Key(s) to toggle visibility
+    Name = "MyScriptUI",
+    Size = UDim2.new(0, 300, 0, 200),
+    ToggleKeys = { Enum.KeyCode.RightControl }
 })
 
--- Add a simple button
 ui:AddButton("Print Hello", function()
     print("Hello world!")
 end)
 
--- Add a toggle switch
 ui:AddToggle("Enable Feature", false, function(val)
     print("Toggle =", val)
 end)
 
--- Add a slider
 ui:AddSlider("Volume", 0, 100, 50, function(val)
     print("Volume:", val)
 end)
 
--- Add a keybind
 ui:AddKeybind("Trigger Action", Enum.KeyCode.K, function()
     print("Pressed K!")
 end)
 
--- Add a textbox
 ui:AddTextbox("Enter Name", "Player123", function(text)
     print("Input:", text)
 end)
 
--- Add a dropdown
 ui:AddDropdown("Choose Weapon", {"AK", "M4", "AWP"}, 1, function(choice)
     print("Selected:", choice)
 end)
 
--- Add a tab (for modular UI)
 local settingsTab = ui:AddTab("Settings")
 settingsTab:AddButton("Reset", function()
     print("Reset clicked!")
 end)
 
--- Switch to tab
 ui:SwitchTab("Settings")
-
--- Show a notification
-ui:Notify("✅ Script loaded successfully!", 3)
+ui:Notify("✅ Script loaded!", 3)
 ```
 
 ---
 
-#### 🔐 About Security:
+### 🔐 Anti-Detection
 
-- ✅ Uses `gethui()` if available to hide the GUI from detection tools  
-  *(e.g., avoids `CoreGui` when possible).*
-- 🔒 Randomized element names (e.g. `btn_183002`, `tab_394001`)  
-  to prevent simple string-based detection from anti-cheat systems.
-- 🧱 All callback functions are wrapped in `pcall()` for fault tolerance.
-- 🧼 Clean and minimal UI, super easy to reuse in any script.
--  https://github.com/ewenja/roblox-hub/blob/main/HihiHub%20ui.lua
+- Uses `gethui()` if available — safer than CoreGui  
+- Randomized UI element names (e.g. `btn_729183`, `tab_201822`)  
+- All callbacks wrapped in `pcall()` for error-proof execution  
+- Clean visuals, no external modules, designed for stealth
+
+---
+
+📂 **GitHub:**  
+https://github.com/ewenja/roblox-hub/blob/main/HihiHub%20ui.lua
+
 ---
