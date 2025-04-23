@@ -311,7 +311,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
         return "cp_" .. tostring(math.random(100000, 999999))
     end
 
-    -- 標題
+    -- 標籤
     local title = Instance.new("TextLabel")
     title.Name = randName()
     title.Size = UDim2.new(1, -20, 0, 20)
@@ -323,19 +323,33 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
     title.TextSize = 14
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = parent
-    self.NextY += 25
+    self.NextY += 20
 
-    -- 色盤區塊
+    -- 展開按鈕
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = randName()
+    toggleButton.Size = UDim2.new(0, 40, 0, 20)
+    toggleButton.Position = UDim2.new(0, 10, 0, self.NextY)
+    toggleButton.BackgroundColor3 = currentColor
+    toggleButton.Text = ""
+    toggleButton.BorderSizePixel = 0
+    toggleButton.AutoButtonColor = false
+    toggleButton.Parent = parent
+    Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 4)
+
+    -- 展開的色盤
     local palette = Instance.new("Frame")
     palette.Name = randName()
     palette.Size = UDim2.new(0, 200, 0, 120)
-    palette.Position = UDim2.new(0, 10, 0, self.NextY)
+    palette.Position = UDim2.new(0, 10, 0, self.NextY + 25)
     palette.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     palette.BorderSizePixel = 1
+    palette.Visible = false
     palette.ClipsDescendants = true
+    palette.ZIndex = 100
     palette.Parent = parent
 
-    -- 漸層：橫向彩虹
+    -- 彩虹色漸層
     local gradientHue = Instance.new("UIGradient")
     gradientHue.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
@@ -349,7 +363,7 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
     gradientHue.Rotation = 0
     gradientHue.Parent = palette
 
-    -- 上下亮度遮罩
+    -- 亮度遮罩
     local overlay = Instance.new("Frame")
     overlay.Size = UDim2.new(1, 0, 1, 0)
     overlay.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -360,31 +374,36 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
     local gradientLight = Instance.new("UIGradient")
     gradientLight.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
         ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
     }
     gradientLight.Rotation = 90
     gradientLight.Parent = overlay
 
-    --  點選圈圈（指示器）
+    -- 圈圈指示器
     local dot = Instance.new("Frame")
-    dot.Name = randName()
     dot.Size = UDim2.new(0, 6, 0, 6)
     dot.AnchorPoint = Vector2.new(0.5, 0.5)
     dot.Position = UDim2.new(0, 0, 0, 0)
     dot.BackgroundColor3 = Color3.new(1, 1, 1)
     dot.BorderColor3 = Color3.new(0, 0, 0)
     dot.BorderSizePixel = 1
-    dot.ZIndex = 10
+    dot.ZIndex = 101
     dot.Parent = palette
     Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 
-    -- 處理點擊 + 更新顏色
+    -- 顯示/隱藏 palette
+    toggleButton.MouseButton1Click:Connect(function()
+        palette.Visible = not palette.Visible
+    end)
+
+    -- 拖曳選色器
+    local dragging = false
     local function updateColor(inputPos)
         local x = math.clamp((inputPos.X - palette.AbsolutePosition.X) / palette.AbsoluteSize.X, 0, 1)
         local y = math.clamp((inputPos.Y - palette.AbsolutePosition.Y) / palette.AbsoluteSize.Y, 0, 1)
 
         currentColor = Color3.fromHSV(x, 1, 1 - y)
+        toggleButton.BackgroundColor3 = currentColor
         dot.Position = UDim2.new(x, 0, y, 0)
 
         if callback then
@@ -394,33 +413,25 @@ function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
 
     palette.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
             updateColor(input.Position)
         end
     end)
 
-    local draggingColor = false -- 新增旗標避免 UI 被拖動
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+            palette.Visible = false
+        end
+    end)
 
-palette.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingColor = true
-		updateColor(input.Position)
-	end
-end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateColor(input.Position)
+        end
+    end)
 
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingColor = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if draggingColor and input.UserInputType == Enum.UserInputType.MouseMovement then
-		updateColor(input.Position)
-	end
-end)
-
-
-    self.NextY += 130
+    self.NextY += 50
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
 function SafeUILib:AddCustomButton(opts)
