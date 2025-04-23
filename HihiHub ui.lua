@@ -45,7 +45,7 @@ function SafeUILib:CreateWindow(opts)
 	t.Parent = mainFrame
 
 	-- 拖曳功能
-	SafeUILib.__DraggingLocked = false -- ✨ 新增變數，全域控制是否允許拖曳
+	SafeUILib.__DraggingLocked = false 
 
 local dragging, dragStart, startPos
 mainFrame.InputBegan:Connect(function(input)
