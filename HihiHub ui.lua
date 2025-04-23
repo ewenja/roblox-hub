@@ -293,7 +293,93 @@ function SafeUILib:AddColorPicker(label, defaultColor, callback)
 
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
+function SafeUILib:AddColorPickerNative(label, defaultColor, callback)
+    self.Buttons = self.Buttons or {}
+    local parent = self:GetParentFrame()
+    local currentColor = defaultColor or Color3.fromRGB(255, 0, 0)
 
+    local function randName()
+        return "cp_" .. math.random(100000, 999999)
+    end
+
+    -- 標題文字
+    local title = Instance.new("TextLabel")
+    title.Name = randName()
+    title.Size = UDim2.new(1, -20, 0, 20)
+    title.Position = UDim2.new(0, 10, 0, self.NextY)
+    title.BackgroundTransparency = 1
+    title.Text = label
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.SourceSans
+    title.TextSize = 14
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = parent
+    self.NextY += 25
+
+    -- 色盤本體
+    local palette = Instance.new("Frame")
+    palette.Name = randName()
+    palette.Size = UDim2.new(0, 200, 0, 100)
+    palette.Position = UDim2.new(0, 10, 0, self.NextY)
+    palette.BorderSizePixel = 1
+    palette.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    palette.ClipsDescendants = true
+    palette.Parent = parent
+
+    -- 左右顏色漸層（彩虹）
+    local gradient1 = Instance.new("UIGradient")
+    gradient1.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+    }
+    gradient1.Rotation = 0
+    gradient1.Parent = palette
+
+    -- 上下亮度遮罩
+    local overlay = Instance.new("Frame")
+    overlay.Name = randName()
+    overlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    overlay.BackgroundTransparency = 1
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.Parent = palette
+
+    local brightness = Instance.new("UIGradient")
+    brightness.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+    }
+    brightness.Rotation = 90
+    brightness.Parent = overlay
+
+    -- 點擊取色
+    palette.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = input.Position
+            local relX = math.clamp((mousePos.X - palette.AbsolutePosition.X) / palette.AbsoluteSize.X, 0, 1)
+            local relY = math.clamp((mousePos.Y - palette.AbsolutePosition.Y) / palette.AbsoluteSize.Y, 0, 1)
+
+            -- 將 X -> 色相 (H)，Y -> 明暗 (V)
+            local hue = relX
+            local val = 1 - relY
+
+            local r, g, b = Color3.fromHSV(hue, 1, val):ToHSV()
+            currentColor = Color3.fromHSV(r, g, b)
+
+            if callback then
+                pcall(callback, currentColor)
+            end
+        end
+    end)
+
+    self.NextY += 110
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
+end
 function SafeUILib:AddCustomButton(opts)
     self.Buttons = self.Buttons or {}
     local name = "cb_" .. math.random(100000, 999999)
