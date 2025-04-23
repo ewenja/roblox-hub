@@ -364,6 +364,76 @@ function SafeUILib:AddSlider(text, minValue, maxValue, defaultValue, callback)
     self.NextY = self.NextY + 40
     self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
 end
+function SafeUILib:AddRoundToggle(text, default, callback)
+    self.Buttons = self.Buttons or {}
+    local state = default or false
+    local parentFrame = self:GetParentFrame()
+
+    -- 主容器
+    local c = Instance.new("Frame")
+    c.Name = "t_"..math.random(100000,999999)
+    c.Size = UDim2.new(1, -20, 0, 40)
+    c.Position = UDim2.new(0, 10, 0, self.NextY)
+    c.BackgroundTransparency = 1
+    c.Parent = parentFrame
+
+    -- 文字 Label
+    local t = Instance.new("TextLabel")
+    t.Name = "l_"..math.random(100000,999999)
+    t.Size = UDim2.new(1, -60, 1, 0)
+    t.Position = UDim2.new(0, 0, 0, 0)
+    t.BackgroundTransparency = 1
+    t.Text = text
+    t.TextColor3 = Color3.new(1, 1, 1)
+    t.Font = Enum.Font.SourceSans
+    t.TextSize = 14
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    t.Parent = c
+
+    -- 開關背景條
+    local bg = Instance.new("Frame")
+    bg.Name = "b_"..math.random(100000,999999)
+    bg.Size = UDim2.new(0, 40, 0, 20)
+    bg.Position = UDim2.new(1, -50, 0.5, -10)
+    bg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    bg.BorderSizePixel = 0
+    bg.Parent = c
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
+
+    -- 滑動球
+    local knob = Instance.new("Frame")
+    knob.Name = "k_"..math.random(100000,999999)
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = state and UDim2.new(1, -19, 0, 1) or UDim2.new(0, 1, 0, 1)
+    knob.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(180, 180, 180)
+    knob.BorderSizePixel = 0
+    knob.Parent = bg
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    -- 動畫切換函數
+    local function update(newState)
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(knob, tweenInfo, {
+            Position = newState and UDim2.new(1, -19, 0, 1) or UDim2.new(0, 1, 0, 1),
+            BackgroundColor3 = newState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(180, 180, 180)
+        }):Play()
+    end
+
+    -- 點擊切換狀態
+    bg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            state = not state
+            update(state)
+            if callback then
+                pcall(callback, state)
+            end
+        end
+    end)
+
+    table.insert(self.Buttons, c)
+    self.NextY = self.NextY + 45
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
+end
 function SafeUILib:AddTab(tabName)
     self.Buttons = self.Buttons or {}
     local tabId = "tab_" .. tostring(math.random(100000, 999999))
