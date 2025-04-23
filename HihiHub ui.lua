@@ -201,6 +201,67 @@ function SafeUILib:AddDropdown(title, options, defaultIndex, callback)
 
 	self.NextY = self.NextY + (#options * 25) + 40
 end
+function SafeUILib:AddCustomButton(opts)
+    self.Buttons = self.Buttons or {}
+    local name = "cb_" .. math.random(100000, 999999)
+    local parentFrame = self:GetParentFrame()
+    local text = opts.Text or "Custom"
+    local callback = opts.Callback
+    local color = opts.Color or Color3.fromRGB(50, 50, 50)
+    local hoverColor = opts.HoverColor or Color3.fromRGB(70, 70, 70)
+    local textColor = opts.TextColor or Color3.fromRGB(255, 255, 255)
+    local font = opts.Font or Enum.Font.SourceSans
+    local textSize = opts.TextSize or 14
+    local cornerRadius = opts.CornerRadius or 6
+    local transparency = opts.BackgroundTransparency or 0
+    local textTransparency = opts.TextTransparency or 0
+    local borderColor = opts.BorderColor
+    local alignment = opts.TextXAlignment or Enum.TextXAlignment.Center
+
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = UDim2.new(1, -20, 0, 30)
+    button.Position = UDim2.new(0, 10, 0, self.NextY)
+    button.BackgroundColor3 = color
+    button.Text = text
+    button.TextColor3 = textColor
+    button.Font = font
+    button.TextSize = textSize
+    button.BackgroundTransparency = transparency
+    button.TextTransparency = textTransparency
+    button.TextXAlignment = alignment
+    button.Parent = parentFrame
+
+    -- 圓角
+    local corner = Instance.new("UICorner", button)
+    corner.CornerRadius = UDim.new(0, cornerRadius)
+
+    -- 邊框（可選）
+    if borderColor then
+        local border = Instance.new("UIStroke", button)
+        border.Thickness = 1
+        border.Color = borderColor
+    end
+
+    -- 動畫效果
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = hoverColor}):Play()
+    end)
+
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = color}):Play()
+    end)
+
+    button.MouseButton1Click:Connect(function()
+        if callback then
+            pcall(callback)
+        end
+    end)
+
+    table.insert(self.Buttons, button)
+    self.NextY = self.NextY + 35
+    self.Frame.Size = UDim2.new(self.Frame.Size.X.Scale, self.Frame.Size.X.Offset, 0, self.NextY + 10)
+end
 function SafeUILib:AddTextbox(label, defaultText, callback)
         self.Buttons = self.Buttons or {}
         local parentFrame = self.Frame or self.__parent and self.__parent.Frame
