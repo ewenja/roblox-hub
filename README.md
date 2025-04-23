@@ -65,6 +65,20 @@ local settingsTab = ui:AddTab("Settings")
 settingsTab:AddButton("Reset", function()
     print("Reset clicked!")
 end)
+ui:AddCustomButton({
+    Text = "⚙ Custom Style",
+    Color = Color3.fromRGB(20, 20, 60),
+    HoverColor = Color3.fromRGB(40, 40, 90),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    CornerRadius = 12,
+    BackgroundTransparency = 0.05,
+    BorderColor = Color3.fromRGB(0, 200, 255),
+    Callback = function()
+        print("Custom styled button clicked!")
+    end
+})
 
 ui:SwitchTab("Settings")
 ui:Notify("✅ Script loaded!", 3)
